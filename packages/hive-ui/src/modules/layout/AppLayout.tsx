@@ -7,6 +7,7 @@ import { WebChatNotifications } from "./WebChatNotifications";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useUserStore } from "@/stores/userStore";
 import { useCanvasStore } from "@/stores/canvasStore";
+import { useAgentChatBridge } from "@/hooks/useAgentChat";
 import { useEffect } from "react";
 
 // Workaround for React Router v7 + React 18 type incompatibility
@@ -32,6 +33,11 @@ export function AppLayout() {
   // Registered once for the whole session so agent-graph and A2UI events keep
   // accumulating in the store no matter which page is currently mounted.
   useEffect(() => initCanvas(), [initCanvas]);
+
+  // Igual que el canvas: montado una sola vez aquí para que la conversación con
+  // el coordinador siga viva en cualquier página. Si cada página lo montara,
+  // cada trozo de respuesta se procesaría una vez por página abierta.
+  useAgentChatBridge();
 
   return (
     <SidebarProvider>

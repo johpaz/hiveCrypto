@@ -4,8 +4,8 @@ import { useWebSocketStore } from "@/stores/useWebSocketStore";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useUserStore } from "@/stores/userStore";
 import { useGlobalConfigStore } from "@/stores/useGlobalConfigStore";
-import { useChatStreaming } from "@/hooks/useChatStreaming";
 import { useNarration } from "@/hooks/useNarration";
+import { useAgentChat, AGENT_ID } from "@/hooks/useAgentChat";
 import { ChatHistory } from "@/modules/chat/ChatHistory";
 import { ChatInput, type ChatAttachment } from "@/modules/chat/ChatInput";
 import { apiClient } from "@/lib/api";
@@ -15,14 +15,14 @@ import { Bot, Volume2, VolumeX, AlertCircle, RefreshCw } from "lucide-react";
 const WEBCHAT_HISTORY_LIMIT = 40;
 
 export function WebChatPage() {
-  const agentId = "main";
-  const { messages, addMessage, setMessages, isLoading, currentSteps, streamingMessageId, connectionWarning, setConnectionWarning } = useChatStore();
-  const { status, send, subscribe } = useWebSocket();
-  const { currentUser, fetchUser } = useUserStore();
+  const agentId = AGENT_ID;
+  // Las suscripciones, el historial y el aviso de conexión los monta
+  // useAgentChatBridge() en AppLayout — aquí sólo se lee y se envía.
+  const { messages, currentSteps, streamingMessageId, connectionWarning } = useChatStore();
+  const { status } = useWebSocket();
   const agents = useGlobalConfigStore((s) => s.agents);
   const fetchAgents = useGlobalConfigStore((s) => s.fetchAgents);
-  const sessionId = currentUser?.id || "default";
-  const { handleStreamingChunk, handleReasoningChunk, handleAudioMessage, handleProgress, handleProcess, handleTyping, resetStreamingRef } = useChatStreaming(agentId, sessionId);
+  const { send: sendToAgent, isLoading, sessionId } = useAgentChat();
   const narration = useNarration();
 
   const isConnected = status === "connected";
@@ -32,147 +32,17 @@ export function WebChatPage() {
   const agentName = coordinator?.name ?? "Coordinador";
 
   useEffect(() => {
-    if (!currentUser) fetchUser();
     if (agents.length === 0) fetchAgents();
   }, []);
 
-  useEffect(() => {
-    if (!sessionId) return;
-    const fetchHistory = async () => {
-      try {
-        const response = await apiClient<{ messages: any[] }>(
-          `/api/chat/history?sessionId=${sessionId}&limit=${WEBCHAT_HISTORY_LIMIT}`
-        );
-        if (response.messages) {
-          const formattedMessages = response.messages
-            .filter((m: any) => m.role === "user" || m.role === "assistant")
-            .map((m: any) => ({
-              id: m.id,
-              conversationId: m.session_id || m.thread_id,
-              type: (m.role === "user" ? "user" : "agent") as any,
-              content: m.content,
-              agentId,
-              timestamp: m.created_at,
-            }));
-          setMessages(formattedMessages);
-        }
-      } catch (error) {
-        console.error("Failed to fetch chat history:", error);
-      }
-    };
-    fetchHistory();
-  }, [sessionId, agentId, setMessages]);
 
-  // El gateway manda `type: "error"` cuando el turno no se puede procesar —el
-  // caso típico es una nota de voz con el canal sin STT configurado o con la
-  // transcripción fallando—. Nadie escuchaba ese evento: la burbuja se quedaba
-  // en "Pensando" para siempre y el motivo sólo existía en los logs.
-  const handleGatewayError = useCallback(
-    (payload: { error?: string }) => {
-      useChatStore.getState().setLoading(false);
-      addMessage({
-        id: generateId(),
-        conversationId: sessionId,
-        type: "error" as const,
-        content: payload?.error || "El gateway no pudo procesar el mensaje.",
-        timestamp: new Date().toISOString(),
-      });
-    },
-    [addMessage, sessionId]
-  );
-
-  useEffect(() => {
-    const unsubMsg = subscribe("message", handleStreamingChunk);
-    const unsubResp = subscribe("response", handleStreamingChunk);
-    const unsubReasoning = subscribe("reasoning", handleReasoningChunk);
-    const unsubAudio = subscribe("audio", handleAudioMessage);
-    const unsubProgress = subscribe("progress", handleProgress);
-    const unsubProcess = subscribe("process", handleProcess);
-    const unsubTyping = subscribe("typing", handleTyping);
-    const unsubError = subscribe("error", handleGatewayError);
-    return () => {
-      unsubMsg();
-      unsubResp();
-      unsubReasoning();
-      unsubAudio();
-      unsubProgress();
-      unsubProcess();
-      unsubTyping();
-      unsubError();
-    };
-  }, [subscribe, handleStreamingChunk, handleReasoningChunk, handleAudioMessage, handleProgress, handleProcess, handleTyping, handleGatewayError]);
-
-  useEffect(() => {
-    if (isConnected) {
-      setConnectionWarning(null);
-    } else if (!isConnecting) {
-      setConnectionWarning("Conexion perdida. Reconectando...");
-    }
-  }, [isConnected, isConnecting, setConnectionWarning]);
 
   const handleSendMessage = useCallback(
     (content: string, options?: { audio?: string, audioMimeType?: string, attachments?: ChatAttachment[] }) => {
-      const messageId = generateId();
       narration.stop();
-
-      const audioBase64 = options?.audio;
-      const audioMimeType = options?.audioMimeType || "audio/webm";
-      const attachments = options?.attachments;
-
-      // Prepare local message for store
-      const newMessage: any = {
-        id: messageId,
-        conversationId: sessionId,
-        type: "user" as const,
-        content,
-        agentId,
-        timestamp: new Date().toISOString(),
-      };
-
-      if (audioBase64) {
-        newMessage.audio = { base64: audioBase64, mimeType: audioMimeType };
-      }
-
-      if (attachments && attachments.length > 0) {
-        // For local storage, we can store multiple, but for the gateway we'll pick the first image and first document
-        // matching the backend's current single-item structure.
-        const firstImage = attachments.find(a => a.type === "image");
-        const firstDoc = attachments.find(a => a.type === "document");
-
-        if (firstImage) newMessage.image = { base64: firstImage.base64, mimeType: firstImage.mimeType, caption: firstImage.fileName };
-        if (firstDoc) newMessage.document = { base64: firstDoc.base64, mimeType: firstDoc.mimeType, fileName: firstDoc.fileName };
-      }
-
-      addMessage(newMessage);
-
-      useChatStore.getState().setLoading(true);
-      resetStreamingRef();
-
-      if (isConnected) {
-        if (audioBase64) {
-          send({ type: "audio", audio: audioBase64, mimeType: audioMimeType, sessionId, timestamp: new Date().toISOString() });
-        } else {
-          const payload: any = { type: "message", content, sessionId, timestamp: new Date().toISOString() };
-          if (attachments && attachments.length > 0) {
-            const firstImage = attachments.find(a => a.type === "image");
-            const firstDoc = attachments.find(a => a.type === "document");
-            if (firstImage) payload.image = { base64: firstImage.base64, mimeType: firstImage.mimeType, caption: firstImage.fileName };
-            if (firstDoc) payload.document = { base64: firstDoc.base64, mimeType: firstDoc.mimeType, fileName: firstDoc.fileName };
-          }
-          send(payload);
-        }
-      } else {
-        addMessage({
-          id: generateId(),
-          conversationId: sessionId,
-          type: "error" as const,
-          content: "No se pudo conectar al agente. Verifica que el gateway este funcionando.",
-          timestamp: new Date().toISOString(),
-        });
-        useChatStore.getState().setLoading(false);
-      }
+      sendToAgent(content, options);
     },
-    [isConnected, sessionId, agentId, addMessage, send, narration, resetStreamingRef]
+    [sendToAgent, narration]
   );
 
   const handleNarrateMessage = useCallback(

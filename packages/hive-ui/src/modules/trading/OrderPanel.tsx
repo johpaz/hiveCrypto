@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, AlertTriangle, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 import { fmtMoney, fmtPrice, fmtAmount, fmtPct } from "./format";
+import { DelegateButton } from "./DelegateButton";
 
 interface Props {
   symbol: string;
@@ -23,9 +24,11 @@ interface Props {
   status: TradingStatus | null;
   disabled: boolean;
   onSubmit: (p: { side: "buy" | "sell"; notional: number }) => Promise<OrderResult | null>;
+  onDelegate: (prompt: string) => void;
+  agentConnected: boolean;
 }
 
-export function OrderPanel({ symbol, price, quote, status, disabled, onSubmit }: Props) {
+export function OrderPanel({ symbol, price, quote, status, disabled, onSubmit, onDelegate, agentConnected }: Props) {
   const [notional, setNotional] = useState("50");
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [busy, setBusy] = useState(false);
@@ -138,6 +141,27 @@ export function OrderPanel({ symbol, price, quote, status, disabled, onSubmit }:
           {busy && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
           {side === "buy" ? "Comprar" : "Vender"} simulado
         </Button>
+
+        {/* Delegar en vez de ejecutar: el agente dimensiona o razona antes de
+            operar, en lugar de mandar la orden tal cual. */}
+        <div className="grid grid-cols-2 gap-2">
+          <DelegateButton
+            prompt={`¿Cuánto debería invertir en ${symbol} con 1% de riesgo? Dame tamaño, stop y relación riesgo-beneficio.`}
+            onDelegate={onDelegate}
+            disabled={!agentConnected}
+            className="w-full text-[11px]"
+          >
+            Dimensionar
+          </DelegateButton>
+          <DelegateButton
+            prompt={`${side === "buy" ? "Compra" : "Vende"} ${valid ? value : 50} ${quote} de ${symbol} en simulado`}
+            onDelegate={onDelegate}
+            disabled={!agentConnected || !valid}
+            className="w-full text-[11px]"
+          >
+            Delegar orden
+          </DelegateButton>
+        </div>
 
         {error && <Alert>{error}</Alert>}
 

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, TrendingUp, Wallet, X } from "lucide-react";
 import { fmtMoney, fmtPrice, fmtPct, fmtAmount, signClass } from "./format";
+import { DelegateButton } from "./DelegateButton";
 
 interface Props {
   account: AccountResult | null;
@@ -20,9 +21,11 @@ interface Props {
   onClosePosition: (symbol: string) => Promise<void>;
   onSelectSymbol: (symbol: string) => void;
   onCreate: () => Promise<void>;
+  onDelegate: (prompt: string) => void;
+  agentConnected: boolean;
 }
 
-export function PortfolioPanel({ account, loading, onClosePosition, onSelectSymbol, onCreate }: Props) {
+export function PortfolioPanel({ account, loading, onClosePosition, onSelectSymbol, onCreate, onDelegate, agentConnected }: Props) {
   const [closing, setClosing] = useState<string | null>(null);
 
   const close = async (symbol: string) => {
@@ -77,9 +80,22 @@ export function PortfolioPanel({ account, loading, onClosePosition, onSelectSymb
         </div>
 
         <div>
-          <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <TrendingUp className="h-3.5 w-3.5" />
-            Posiciones abiertas ({positions.length})
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <TrendingUp className="h-3.5 w-3.5" />
+              Posiciones abiertas ({positions.length})
+            </div>
+            {positions.length > 0 && (
+              <DelegateButton
+                prompt="Revisa mi exposición actual y dime si estoy demasiado concentrado en algún activo."
+                onDelegate={onDelegate}
+                disabled={!agentConnected}
+                variant="ghost"
+                className="h-6 px-2 text-[11px]"
+              >
+                Revisar exposición
+              </DelegateButton>
+            )}
           </div>
 
           {positions.length === 0 ? (

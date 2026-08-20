@@ -595,6 +595,17 @@ export async function backtestRun(ctx: TradingContext, p: BacktestParams) {
 
   const lastPrice = c[c.length - 1]!;
   const finalEquity = balance + (position ? position.amount * lastPrice : 0);
+
+  // Drawdown máximo sobre la curva de equity: cuánto habría que aguantar. Una
+  // estrategia rentable con un drawdown intolerable es inviable en la práctica.
+  let peak = 0, maxDrawdownPct = 0;
+  for (const point of equityCurve) {
+    if (point.equity > peak) peak = point.equity;
+    if (peak > 0) {
+      const dd = ((peak - point.equity) / peak) * 100;
+      if (dd > maxDrawdownPct) maxDrawdownPct = dd;
+    }
+  }
   const wins = trades.filter(t => t.pnl > 0);
   const losses = trades.filter(t => t.pnl < 0);
   const grossWin = wins.reduce((s, t) => s + t.pnl, 0);
@@ -617,6 +628,7 @@ export async function backtestRun(ctx: TradingContext, p: BacktestParams) {
     wins: wins.length, losses: losses.length,
     winRatePct: trades.length ? (wins.length / trades.length) * 100 : 0,
     profitFactor: grossLoss > 0 ? grossWin / grossLoss : null,
+    maxDrawdownPct,
     trades: trades.slice(-50),
     equityCurve,
     caveats: [

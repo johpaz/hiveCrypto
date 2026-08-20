@@ -24,6 +24,27 @@ const FRIENDLY_TOOL_LABELS: Record<string, string> = {
   "cron.create": "Programando tarea",
   notify: "Enviando aviso",
   report_progress: "Reportando avance",
+
+  // Trading
+  market_ticker: "Consultando precio",
+  market_ohlcv: "Descargando velas",
+  market_orderbook: "Mirando el libro",
+  market_trades: "Revisando el flujo",
+  market_symbols: "Buscando el par",
+  market_funding: "Consultando funding",
+  ta_indicators: "Calculando indicadores",
+  ta_levels: "Buscando soportes y resistencias",
+  scan_markets: "Escaneando el mercado",
+  arbitrage_scan: "Comparando exchanges",
+  paper_account: "Consultando el portafolio",
+  paper_order: "Ejecutando orden simulada",
+  paper_positions: "Revisando posiciones",
+  paper_close: "Cerrando posición",
+  paper_history: "Revisando el historial",
+  exchange_balance: "Consultando saldo en testnet",
+  exchange_order: "Colocando orden en testnet",
+  exchange_orders: "Revisando órdenes abiertas",
+  backtest_run: "Corriendo el backtest",
 };
 
 export function humanizeTool(name: string | null | undefined): string | null {

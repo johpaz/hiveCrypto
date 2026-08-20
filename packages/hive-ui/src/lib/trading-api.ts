@@ -111,7 +111,7 @@ export interface BacktestResult {
   initialBalance: number; finalEquity: number; returnPct: number;
   buyHoldEquity: number; buyHoldReturnPct: number; beatsBuyHold: boolean;
   closedTrades: number; wins: number; losses: number;
-  winRatePct: number; profitFactor: number | null;
+  winRatePct: number; profitFactor: number | null; maxDrawdownPct: number;
   trades: BacktestTrade[];
   equityCurve: { ts: number; equity: number }[];
   caveats: string[];

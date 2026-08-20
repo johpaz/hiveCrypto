@@ -27,6 +27,10 @@ import { HistoryPanel } from "@/modules/trading/HistoryPanel";
 import { ScreenerPanel } from "@/modules/trading/ScreenerPanel";
 import { BacktestPanel } from "@/modules/trading/BacktestPanel";
 import { fmtPrice, fmtPct, fmtCompact, signClass } from "@/modules/trading/format";
+import { AgentActivityStrip } from "@/modules/trading/AgentActivityStrip";
+import { AgentPanel } from "@/modules/trading/AgentPanel";
+import { DelegateButton } from "@/modules/trading/DelegateButton";
+import { useAgentChat } from "@/hooks/useAgentChat";
 
 const TIMEFRAMES = ["15m", "1h", "4h", "1d"] as const;
 
@@ -65,6 +69,18 @@ export function TradingPage() {
   const [showLevels, setShowLevels] = useState(true);
 
   const quote = account?.account.quote ?? "USDT";
+
+  const [agentPanelOpen, setAgentPanelOpen] = useState(false);
+  const { send: sendToAgent, isConnected: agentConnected } = useAgentChat();
+
+  /**
+   * Manda la frase al coordinador y abre el panel. Se abre siempre: delegar sin
+   * ver la respuesta dejaría al usuario sin saber si pasó algo.
+   */
+  const delegate = useCallback((prompt: string) => {
+    sendToAgent(prompt);
+    setAgentPanelOpen(true);
+  }, [sendToAgent]);
 
   // ── carga del gráfico ────────────────────────────────────────────────────
   const loadChart = useCallback(async (sym: string, tf: string) => {
@@ -205,6 +221,15 @@ export function TradingPage() {
         )}
 
         <div className="ml-auto flex items-center gap-2">
+          <AgentActivityStrip />
+          <DelegateButton
+            prompt={`Analiza ${symbol} en ${timeframe}`}
+            onDelegate={delegate}
+            disabled={!agentConnected}
+            className="h-8"
+          >
+            Analizar con el agente
+          </DelegateButton>
           <Badge variant="outline" className={`text-[10px] ${mode.tone}`}>{mode.text}</Badge>
           {status && (
             <Badge variant="outline" className="text-[10px]">{status.defaultExchange}</Badge>
@@ -296,6 +321,8 @@ export function TradingPage() {
           <div className="grid gap-4 lg:grid-cols-3">
             <div className="space-y-4 lg:col-span-2">
               <PortfolioPanel
+                onDelegate={delegate}
+                agentConnected={agentConnected}
                 account={account}
                 loading={loadingAccount}
                 onClosePosition={closePosition}
@@ -305,6 +332,8 @@ export function TradingPage() {
               <HistoryPanel history={history} quote={quote} />
             </div>
             <OrderPanel
+              onDelegate={delegate}
+              agentConnected={agentConnected}
               symbol={symbol}
               price={ticker?.last ?? null}
               quote={quote}
@@ -328,6 +357,8 @@ export function TradingPage() {
         {/* ── backtest ─────────────────────────────────────────────────── */}
         <TabsContent value="backtest" className="mt-3">
           <BacktestPanel
+            onDelegate={delegate}
+            agentConnected={agentConnected}
             symbol={symbol}
             timeframe={timeframe}
             loading={loadingBacktest}
@@ -342,6 +373,8 @@ export function TradingPage() {
           <AuditPanel status={status} />
         </TabsContent>
       </Tabs>
+
+      <AgentPanel open={agentPanelOpen} onOpenChange={setAgentPanelOpen} />
     </div>
   );
 }

@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, FlaskConical, Check, X } from "lucide-react";
 import { fmtMoney, fmtPct, signClass } from "./format";
+import { DelegateButton } from "./DelegateButton";
 
 interface Props {
   symbol: string;
@@ -23,9 +24,11 @@ interface Props {
   result: BacktestResult | null;
   error: string | null;
   onRun: (params: Record<string, unknown>) => void;
+  onDelegate: (prompt: string) => void;
+  agentConnected: boolean;
 }
 
-export function BacktestPanel({ symbol, timeframe, loading, result, error, onRun }: Props) {
+export function BacktestPanel({ symbol, timeframe, loading, result, error, onRun, onDelegate, agentConnected }: Props) {
   const [strategy, setStrategy] = useState<"ema_cross" | "rsi_threshold">("ema_cross");
   const [fast, setFast] = useState("20");
   const [slow, setSlow] = useState("50");
@@ -120,6 +123,7 @@ export function BacktestPanel({ symbol, timeframe, loading, result, error, onRun
               <Metric
                 label="Profit factor"
                 value={result.profitFactor === null ? "sin pérdidas" : result.profitFactor.toFixed(2)}
+                sub={`DD máx. ${result.maxDrawdownPct.toFixed(1)}%`}
               />
             </div>
 
@@ -130,6 +134,15 @@ export function BacktestPanel({ symbol, timeframe, loading, result, error, onRun
                 Sólo {result.closedTrades} operaciones cerradas: muestra insuficiente para concluir.
               </p>
             )}
+
+            <DelegateButton
+              prompt={`Interpreta este backtest de ${strategy === "ema_cross" ? "cruce de medias" : "umbral de RSI"} en ${symbol} ${timeframe}: rendimiento ${result.returnPct.toFixed(1)}% frente a ${result.buyHoldReturnPct.toFixed(1)}% de comprar y mantener, ${result.closedTrades} operaciones, win rate ${result.winRatePct.toFixed(0)}%, drawdown ${result.maxDrawdownPct.toFixed(1)}%. ¿Es una estrategia usable?`}
+              onDelegate={onDelegate}
+              disabled={!agentConnected}
+              className="w-full"
+            >
+              Interpretar con el agente
+            </DelegateButton>
 
             <details className="text-[11px] text-muted-foreground">
               <summary className="cursor-pointer hover:text-foreground">Limitaciones del método</summary>
