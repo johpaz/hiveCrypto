@@ -35,14 +35,14 @@
       },
     },
     "packages/cli": {
-      "name": "@johpaz/hivecripto-cli",
+      "name": "@johpaz/hivecrypto-cli",
       "version": "0.1.0",
       "bin": {
-        "hivecripto": "./dist/hivecripto.js",
+        "hivecrypto": "./dist/hivecrypto.js",
       },
       "dependencies": {
         "@clack/prompts": "1.1.0",
-        "@johpaz/hivecripto-core": "^0.1.0",
+        "@johpaz/hivecrypto-core": "^0.1.0",
         "toon-format-parser": "1.1.3",
       },
       "devDependencies": {
@@ -51,13 +51,14 @@
       },
     },
     "packages/core": {
-      "name": "@johpaz/hivecripto-core",
+      "name": "@johpaz/hivecrypto-core",
       "version": "0.1.0",
       "dependencies": {
         "@ag-ui/core": "^0.0.46",
         "@johpaz/hive-db": "0.3.1",
-        "@johpaz/hivecripto-mcp": "^0.1.0",
-        "@johpaz/hivecripto-skills": "^0.1.0",
+        "@johpaz/hivecrypto-mcp": "^0.1.0",
+        "@johpaz/hivecrypto-mcp-trading": "^0.1.0",
+        "@johpaz/hivecrypto-skills": "^0.1.0",
         "@modelcontextprotocol/sdk": "^1.26.0",
         "@slack/bolt": "^4.7.2",
         "@whiskeysockets/baileys": "7.0.0-rc11",
@@ -81,7 +82,7 @@
       },
     },
     "packages/hive-ui": {
-      "name": "@johpaz/hivecripto-ui",
+      "name": "@johpaz/hivecrypto-ui",
       "version": "0.1.0",
       "dependencies": {
         "@hookform/resolvers": "^3.10.0",
@@ -168,7 +169,7 @@
       },
     },
     "packages/mcp": {
-      "name": "@johpaz/hivecripto-mcp",
+      "name": "@johpaz/hivecrypto-mcp",
       "version": "0.1.0",
       "dependencies": {
         "@modelcontextprotocol/sdk": "^1.26.0",
@@ -180,7 +181,7 @@
       },
     },
     "packages/mcp-trading": {
-      "name": "@johpaz/hivecripto-mcp-trading",
+      "name": "@johpaz/hivecrypto-mcp-trading",
       "version": "0.1.0",
       "dependencies": {
         "@modelcontextprotocol/server": "^2.0.0",
@@ -193,7 +194,7 @@
       },
     },
     "packages/skills": {
-      "name": "@johpaz/hivecripto-skills",
+      "name": "@johpaz/hivecrypto-skills",
       "version": "0.1.0",
       "devDependencies": {
         "@types/bun": "^1.3.13",
@@ -393,17 +394,17 @@
 
     "@johpaz/hive-db-win32-x64-msvc": ["@johpaz/hive-db-win32-x64-msvc@0.3.1", "", { "os": "win32", "cpu": "x64" }, "sha512-yUQi/QcytY9RA1Bry9p+PDnICXVhbupv1RDOrVA0cKNm8Bs8FXKSgZjf2wsrUgL17xUA9drE4oKLyb5++iy2xg=="],
 
-    "@johpaz/hivecripto-cli": ["@johpaz/hivecripto-cli@workspace:packages/cli"],
+    "@johpaz/hivecrypto-cli": ["@johpaz/hivecrypto-cli@workspace:packages/cli"],
 
-    "@johpaz/hivecripto-core": ["@johpaz/hivecripto-core@workspace:packages/core"],
+    "@johpaz/hivecrypto-core": ["@johpaz/hivecrypto-core@workspace:packages/core"],
 
-    "@johpaz/hivecripto-mcp": ["@johpaz/hivecripto-mcp@workspace:packages/mcp"],
+    "@johpaz/hivecrypto-mcp": ["@johpaz/hivecrypto-mcp@workspace:packages/mcp"],
 
-    "@johpaz/hivecripto-mcp-trading": ["@johpaz/hivecripto-mcp-trading@workspace:packages/mcp-trading"],
+    "@johpaz/hivecrypto-mcp-trading": ["@johpaz/hivecrypto-mcp-trading@workspace:packages/mcp-trading"],
 
-    "@johpaz/hivecripto-skills": ["@johpaz/hivecripto-skills@workspace:packages/skills"],
+    "@johpaz/hivecrypto-skills": ["@johpaz/hivecrypto-skills@workspace:packages/skills"],
 
-    "@johpaz/hivecripto-ui": ["@johpaz/hivecripto-ui@workspace:packages/hive-ui"],
+    "@johpaz/hivecrypto-ui": ["@johpaz/hivecrypto-ui@workspace:packages/hive-ui"],
 
     "@jridgewell/gen-mapping": ["@jridgewell/gen-mapping@0.3.13", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.0", "@jridgewell/trace-mapping": "^0.3.24" } }, "sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA=="],
 
@@ -2163,11 +2164,11 @@
 
     "@eslint/eslintrc/globals": ["globals@14.0.0", "", {}, "sha512-oahGvuMGQlPw/ivIYBjVSrWAfWLBeku5tpPE2fOPLi+WHffIWbuh2tCjhyQhTBPMf5E9jDEH4FOmTYgYwbKwtQ=="],
 
-    "@johpaz/hivecripto-cli/@clack/prompts": ["@clack/prompts@1.1.0", "", { "dependencies": { "@clack/core": "1.1.0", "sisteransi": "^1.0.5" } }, "sha512-pkqbPGtohJAvm4Dphs2M8xE29ggupihHdy1x84HNojZuMtFsHiUlRvqD24tM2+XmI+61LlfNceM3Wr7U5QES5g=="],
+    "@johpaz/hivecrypto-cli/@clack/prompts": ["@clack/prompts@1.1.0", "", { "dependencies": { "@clack/core": "1.1.0", "sisteransi": "^1.0.5" } }, "sha512-pkqbPGtohJAvm4Dphs2M8xE29ggupihHdy1x84HNojZuMtFsHiUlRvqD24tM2+XmI+61LlfNceM3Wr7U5QES5g=="],
 
-    "@johpaz/hivecripto-cli/toon-format-parser": ["toon-format-parser@1.1.3", "", {}, "sha512-jLsz1NK0JPyg+1OZw26khudDmT2jqaJNMAk5jfNea1pYi+RptZBGeM8FLgQvq6RYHv7P3bxS5ZKMNMpR5Op/UA=="],
+    "@johpaz/hivecrypto-cli/toon-format-parser": ["toon-format-parser@1.1.3", "", {}, "sha512-jLsz1NK0JPyg+1OZw26khudDmT2jqaJNMAk5jfNea1pYi+RptZBGeM8FLgQvq6RYHv7P3bxS5ZKMNMpR5Op/UA=="],
 
-    "@johpaz/hivecripto-ui/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
+    "@johpaz/hivecrypto-ui/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 
     "@radix-ui/react-alert-dialog/@radix-ui/react-slot": ["@radix-ui/react-slot@1.2.3", "", { "dependencies": { "@radix-ui/react-compose-refs": "1.1.2" }, "peerDependencies": { "@types/react": "*", "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc" }, "optionalPeers": ["@types/react"] }, "sha512-aeNmHnBxbi2St0au6VBVC7JXFlhLlOnvIIlePNniyUNAClzmtAUEY8/pBiK3iHjufOlwA+c20/8jngo7xcrg8A=="],
 
@@ -2337,7 +2338,7 @@
 
     "@eslint/eslintrc/ajv/json-schema-traverse": ["json-schema-traverse@0.4.1", "", {}, "sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg=="],
 
-    "@johpaz/hivecripto-cli/@clack/prompts/@clack/core": ["@clack/core@1.1.0", "", { "dependencies": { "sisteransi": "^1.0.5" } }, "sha512-SVcm4Dqm2ukn64/8Gub2wnlA5nS2iWJyCkdNHcvNHPIeBTGojpdJ+9cZKwLfmqy7irD4N5qLteSilJlE0WLAtA=="],
+    "@johpaz/hivecrypto-cli/@clack/prompts/@clack/core": ["@clack/core@1.1.0", "", { "dependencies": { "sisteransi": "^1.0.5" } }, "sha512-SVcm4Dqm2ukn64/8Gub2wnlA5nS2iWJyCkdNHcvNHPIeBTGojpdJ+9cZKwLfmqy7irD4N5qLteSilJlE0WLAtA=="],
 
     "@slack/logger/@types/node/undici-types": ["undici-types@7.21.0", "", {}, "sha512-w9IMgQrz4O0YN1LtB7K5P63vhlIOvC7opSmouCJ+ZywlPAlO9gIkJ+otk6LvGpAs2wg4econaCz3TvQ9xPoyuQ=="],
 

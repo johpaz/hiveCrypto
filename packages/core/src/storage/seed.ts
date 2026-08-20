@@ -49,6 +49,28 @@ export const SEED_DATA: SeedData = {
     // ─────────────────────────────────────────
     // 2. WEB — Búsqueda, navegación + automatización
     // ─────────────────────────────────────────
+    // ─────────────────────────────────────────
+    // TRADING — mercado, análisis, paper trading, testnet y backtesting
+    // ─────────────────────────────────────────
+    { id: "market_ticker", name: "market_ticker", category: "trading", description: "Precio actual y estadísticas de 24h de un símbolo cripto. Sinónimos: precio de bitcoin, cotización, cuánto vale, a cómo está, valor actual" },
+    { id: "market_ohlcv", name: "market_ohlcv", category: "trading", description: "Serie de velas OHLCV de un símbolo cripto. Sinónimos: velas, gráfico de precios, histórico, candlestick, datos históricos" },
+    { id: "market_orderbook", name: "market_orderbook", category: "trading", description: "Profundidad L2 del libro de órdenes con spread. Sinónimos: libro de órdenes, profundidad, order book, liquidez, oferta y demanda" },
+    { id: "market_trades", name: "market_trades", category: "trading", description: "Operaciones recientes del mercado con volumen comprador y vendedor. Sinónimos: trades recientes, flujo de órdenes, presión compradora" },
+    { id: "market_symbols", name: "market_symbols", category: "trading", description: "Listar o buscar los mercados disponibles en un exchange. Sinónimos: buscar par, qué símbolos hay, mercados disponibles, listar monedas" },
+    { id: "market_funding", name: "market_funding", category: "trading", description: "Tasa de financiación y open interest de un perpetuo. Sinónimos: funding rate, tasa de financiación, interés abierto, perpetuos" },
+    { id: "ta_indicators", name: "ta_indicators", category: "trading", description: "Indicadores técnicos: RSI, MACD, EMA, SMA, Bollinger, ATR y VWAP. Sinónimos: rsi, macd, medias móviles, análisis técnico, sobrecomprado, sobrevendido" },
+    { id: "ta_levels", name: "ta_levels", category: "trading", description: "Soportes y resistencias por pivotes fractales. Sinónimos: soportes, resistencias, niveles, zonas clave, dónde rebota" },
+    { id: "scan_markets", name: "scan_markets", category: "trading", description: "Screener de mercados por volumen y variación de 24h. Sinónimos: screener, qué se está moviendo, mayores subidas, top ganadores" },
+    { id: "arbitrage_scan", name: "arbitrage_scan", category: "trading", description: "Comparar el precio de un símbolo entre exchanges y calcular el spread. Sinónimos: arbitraje, diferencia de precio, dónde está más barato" },
+    { id: "paper_account", name: "paper_account", category: "trading", description: "Crear o consultar la cuenta virtual de paper trading. Sinónimos: cuenta demo, portafolio simulado, saldo virtual, cuánto tengo" },
+    { id: "paper_order", name: "paper_order", category: "trading", description: "Orden de mercado SIMULADA contra el libro real, sin fondos reales. Sinónimos: comprar simulado, vender simulado, orden de prueba, abrir posición" },
+    { id: "paper_positions", name: "paper_positions", category: "trading", description: "Posiciones simuladas abiertas con PnL no realizado. Sinónimos: mis posiciones, qué tengo abierto, ganancia no realizada" },
+    { id: "paper_close", name: "paper_close", category: "trading", description: "Cerrar una posición simulada a mercado y reportar el PnL realizado. Sinónimos: cerrar posición, vender todo, liquidar, tomar ganancias" },
+    { id: "paper_history", name: "paper_history", category: "trading", description: "Historial de operaciones simuladas con win rate, profit factor y drawdown. Sinónimos: historial, resultados, estadísticas, cómo me fue" },
+    { id: "exchange_balance", name: "exchange_balance", category: "trading", description: "Saldo de la cuenta en el TESTNET del exchange. Sinónimos: saldo en el exchange, balance de la cuenta" },
+    { id: "exchange_order", name: "exchange_order", category: "trading", description: "Colocar una orden en el TESTNET del exchange, con fondos de prueba. Sinónimos: orden en testnet, colocar orden de prueba" },
+    { id: "exchange_orders", name: "exchange_orders", category: "trading", description: "Listar o cancelar órdenes abiertas en el TESTNET. Sinónimos: órdenes abiertas, cancelar orden, qué tengo pendiente" },
+    { id: "backtest_run", name: "backtest_run", category: "trading", description: "Probar una estrategia sobre histórico y compararla contra comprar y mantener. Sinónimos: backtest, probar estrategia, qué habría pasado, validar idea" },
     { id: "api_request", name: "api_request", category: "api", description: "Ejecutar una petición HTTP autorizada contra un endpoint REST y validar la respuesta. Sinónimos: llamar api, request rest, consumir endpoint, petición http, hacer get, hacer post" },
     { id: "web_search", name: "web_search", category: "web", description: "Buscar en la web información actual y noticias. Sinónimos: búsqueda web, noticias, información, buscar en internet, google" },
     { id: "web_fetch", name: "web_fetch", category: "web", description: "Obtener contenido de texto de una URL (ligero, sin JS). Sinónimos: descargar página, extraer texto, obtener contenido, leer url" },

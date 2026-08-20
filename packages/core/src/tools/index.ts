@@ -35,6 +35,9 @@ import * as office from "./office/index.ts";
 // API (1) - HTTP client for REST APIs
 import * as api from "./api/index.ts";
 
+// Trading (19) - mercado, análisis técnico, paper trading, testnet y backtesting
+import * as trading from "./trading/index.ts";
+
 /**
  * Creates all tools with proper configuration
  */
@@ -67,6 +70,9 @@ export function createAllTools(config: Config): Tool[] {
     // API (1)
     ...api.createTools(),
 
+    // TRADING (19)
+    ...trading.createTools(),
+
   ];
 }
 
@@ -93,6 +99,8 @@ export function createToolsByCategory(category: string, config: Config): Tool[] 
       return office.createTools();
     case "api":
       return api.createTools();
+    case "trading":
+      return trading.createTools();
     default:
       return [];
   }

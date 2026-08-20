@@ -17,7 +17,7 @@ Generado desde el código fuente para Hive **0.1.0**.
 | `@johpaz/hivecrypto-desktop` | `0.1.0` |
 | `apps/hive-desktop/src-tauri/tauri.conf.json` | `0.1.0` |
 
-## Herramientas (60)
+## Herramientas (79)
 
 | Herramienta | Categoría | Descripción |
 |---|---|---|
@@ -29,8 +29,10 @@ Generado desde el código fuente para Hive **0.1.0**.
 | `agent_create` | agents | Crear un nuevo agente worker especializado. Requiere consultar get_available_models; para un especialista MCP confirmado por el usuario, acepta mcp_server_id. Sinónimos: crear agente, nuevo worker, nuevo trabajador |
 | `agent_find` | agents | Discover available worker agents. Includes global system catalog agents plus private workers owned by the current user. This tool does not report task execution; use task_list/task_status for that. Spanish: buscar agente, encontrar worker, localizar agente |
 | `api_request` | api | Make an HTTP request to a REST API endpoint. Supports GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS with custom headers, body, and query parameters. Spanish: llamar api, petición http, curl, post a api, put api, delete api, consumir servicio rest |
+| `arbitrage_scan` | externa | Compara el precio del mismo símbolo entre varios exchanges y calcula el spread. El spread bruto no descuenta comisiones ni retiros. Spanish: arbitraje, diferencia de precio entre exchanges, spread |
 | `artifact_inspect` | web | Inspect managed artifact metadata, integrity, MIME type and dimensions without returning or modifying its binary content. |
 | `artifact_read` | web | Read the text content of a managed artifact in slices, or search inside it. Use this on any artifact_ref a tool returned instead of guessing from its preview. Spanish: leer artefacto, ver contenido del artefacto, abrir resultado grande, buscar dentro del artefacto |
+| `backtest_run` | externa | Prueba una estrategia sobre datos históricos: "ema_cross" (cruce de medias) o "rsi_threshold" (sobrecompra/sobreventa). Devuelve operaciones, rendimiento y comparación contra comprar y mantener. Spanish: backtest, probar estrategia, simular histórico, qué habría pasado, validar idea |
 | `browser_click` | web | Click on a web page element. Spanish: hacer clic, botón, enlace, interactuar |
 | `browser_extract` | web | Extract text, links, or structured data from page using CSS selectors or XPath. For general page overview without specific selectors, returns compact accessibility snapshot. Spanish: extraer datos, obtener información, scraping, selectores |
 | `browser_navigate` | web | Navigate browser to URL, get rendered page content (supports JS). Returns compact accessibility tree with element refs (@e1, @e2) for interaction. Spanish: navegar a url, abrir página, sitio web |
@@ -50,6 +52,9 @@ Generado desde el código fuente para Hive **0.1.0**.
 | `cron.resume` | cron | Resume a paused cron job. Spanish: reanudar tarea programada, continuar |
 | `cron.trigger` | cron | Manually trigger a cron job execution immediately. Spanish: ejecutar tarea ahora, forzar ejecución |
 | `cron.update` | cron | Update an existing cron job: change expression, task instruction, channel, time window, etc. Spanish: actualizar tarea programada, modificar cron, editar recordatorio |
+| `exchange_balance` | externa | Saldo de la cuenta en el TESTNET del exchange. Requiere TRADING_MODE=testnet y llaves de testnet. Nunca consulta una cuenta de producción. Spanish: saldo en el exchange, balance de la cuenta |
+| `exchange_order` | externa | Coloca una orden en el TESTNET del exchange (fondos de prueba, nunca dinero real). Requiere TRADING_MODE=testnet y pasa por whitelist y notional máximo. Spanish: orden en testnet, colocar orden |
+| `exchange_orders` | externa | Lista o cancela órdenes abiertas en el TESTNET del exchange. Spanish: órdenes abiertas, cancelar orden, qué tengo pendiente |
 | `fs_delete` | filesystem | Delete file or directory from workspace. Spanish: eliminar archivo, borrar archivo, borrar carpeta |
 | `fs_edit` | filesystem | Edit specific lines or sections of a file. Spanish: editar archivo, modificar líneas, actualizar contenido |
 | `fs_exists` | filesystem | Check if a file or directory exists. Spanish: verificar archivo, comprobar, existe archivo |
@@ -58,6 +63,12 @@ Generado desde el código fuente para Hive **0.1.0**.
 | `fs_read` | filesystem | Read file content from agent workspace. Spanish: leer archivo, ver contenido, abrir archivo |
 | `fs_write` | filesystem | Create or overwrite file in agent workspace. Spanish: crear archivo, guardar archivo, escribir archivo |
 | `get_available_models` | agents | Obtener el catálogo completo de modelos de los providers configurados (con credenciales activas) para elegir el más adecuado según capacidad, contexto o costo — no solo el modelo por defecto del usuario. Sinónimos: ver modelos, listar providers, modelos disponibles, consultar modelos, provider activo, qué modelos tengo, modelos para código, modelos para chat |
+| `market_funding` | externa | Tasa de financiación y open interest de un contrato perpetuo. Funding positivo = los largos pagan a los cortos. Spanish: funding rate, tasa de financiación, interés abierto, perpetuos |
+| `market_ohlcv` | externa | Serie de velas (candlesticks) de un símbolo: [timestamp, open, high, low, close, volume]. Spanish: velas, gráfico de precios, histórico, candlestick |
+| `market_orderbook` | externa | Profundidad L2 del libro de órdenes: bids y asks con precio y cantidad, más el spread. Spanish: libro de órdenes, profundidad, order book, liquidez, spread |
+| `market_symbols` | externa | Lista o busca los mercados disponibles en un exchange. Úsala cuando no sepas el símbolo exacto. Spanish: buscar par, qué símbolos hay, mercados disponibles, existe el par |
+| `market_ticker` | externa | Precio actual y estadísticas de 24h de un símbolo cripto: last, bid, ask, volumen y variación porcentual. Spanish: precio de bitcoin, cotización, cuánto vale, a cómo está, precio actual |
+| `market_trades` | externa | Últimas operaciones ejecutadas en el mercado, con volumen comprador y vendedor agregado. Spanish: trades recientes, operaciones, flujo de órdenes, presión compradora |
 | `memory_delete` | agents | Delete a specific memory entry. Spanish: borrar memoria, eliminar recuerdo, quitar dato |
 | `memory_list` | agents | List all saved memory entries. Spanish: listar memorias, ver memorias, todas las memorias |
 | `memory_read` | agents | Retrieve a memory entry by identifier. Spanish: leer memoria, recuperar dato, obtener memoria |
@@ -72,9 +83,17 @@ Generado desde el código fuente para Hive **0.1.0**.
 | `office_leer_pdf` | office | Leer contenido de un archivo PDF y retornar texto plano con metadata. Spanish: leer pdf, abrir pdf, extraer texto de pdf, pdf a texto |
 | `office_leer_pptx` | office | Leer un archivo PowerPoint (.pptx) y retornar el texto de cada diapositiva como array estructurado. Spanish: leer powerpoint, abrir pptx, extraer texto de presentacion, contenido slides |
 | `office_leer_xlsx` | office | Leer un archivo Excel (.xlsx) y retornar las hojas con sus datos como objetos JSON. Spanish: leer excel, abrir xlsx, extraer datos de excel, hojas excel |
+| `paper_account` | externa | Crea o consulta la cuenta virtual de paper trading: saldo, equity, posiciones y rendimiento total. Spanish: cuenta demo, portafolio simulado, saldo virtual, cuánto tengo, mi cuenta |
+| `paper_close` | externa | Cierra una posición simulada vendiendo toda la cantidad a mercado. Devuelve el PnL realizado. Spanish: cerrar posición, vender todo, liquidar, salir de la posición |
+| `paper_history` | externa | Historial de operaciones simuladas con métricas: win rate, PnL total, profit factor y drawdown máximo. Spanish: historial, resultados, estadísticas, cómo me fue, win rate, mis operaciones |
+| `paper_order` | externa | Ejecuta una orden de mercado SIMULADA contra el libro de órdenes real. No toca fondos reales ni llega al exchange; el precio de fill incluye el slippage real del libro. Spanish: comprar simulado, vender simulado, orden de prueba, paper trade, abrir posición |
+| `paper_positions` | externa | Posiciones abiertas de la cuenta simulada con su PnL no realizado, valoradas a precio de mercado. Spanish: mis posiciones, qué tengo abierto, ganancia no realizada, cómo van mis trades |
 | `report_progress` | core | Report progress of an ongoing task to the user. Sends a real-time update to the active channel. Use frequently during long operations so the user knows what's happening. |
 | `save_note` | core | Save a note to the scratchpad (survives context compression). |
+| `scan_markets` | externa | Screener: filtra los mercados por volumen y variación de 24h y los ordena. Para ver qué se está moviendo. Spanish: screener, qué se está moviendo, mayores subidas, top ganadores, más volumen, qué comprar |
 | `search_knowledge` | core | Busca en TODO el conocimiento de Hive: tools nativas, MCP, skills, agentes de catálogo y playbook. |
+| `ta_indicators` | externa | Indicadores técnicos sobre las velas de un símbolo: RSI, MACD, EMA, SMA, Bollinger, ATR y VWAP. Usa suavizado de Wilder, así que los valores coinciden con TradingView. Spanish: rsi, macd, medias móviles, bollinger, indicadores, análisis técnico, sobrecomprado |
+| `ta_levels` | externa | Soportes y resistencias por pivotes fractales, agrupados por cercanía. Más toques = nivel más relevante. Spanish: soportes, resistencias, niveles, zonas clave, dónde rebota |
 | `task_delegate` | agents | Delegate a bounded task to an existing worker_id (any `agents` row: catalog-seeded or agent_create-made). The delivery goes through deterministic acceptance checks (no LLM); you judge anything they don't cover in your closing turn, and use task_revise to send it back with feedback if it doesn't meet its criteria. mode=sync blocks the conversation until done; mode=async enqueues and frees the conversation immediately — the user is notified automatically in this same chat when the worker finishes. Prefer async unless you expect the result in a few seconds. |
 | `task_list` | agents | List real delegated task executions for the current user. TaskDoc and JobDoc are the source of truth. Use this instead of agent_find to determine whether work is pending, running, completed, failed, or blocked. |
 | `task_revise` | agents | Send a completed or blocked delegated task back to its worker with concrete feedback, instead of reporting it as done. The worker resumes on the SAME thread — it keeps its prior context, so the feedback only needs to describe what's missing. Use this when a delivery doesn't meet its acceptance criteria and you can't fix it yourself. |
@@ -82,7 +101,7 @@ Generado desde el código fuente para Hive **0.1.0**.
 | `web_fetch` | web | Fetch plain content from a URL (lightweight, no JS). Spanish: obtener página, descargar contenido, extraer texto de url |
 | `web_search` | web | Search the web for current information and research. Spanish: buscar en internet, búsqueda web, noticias, información |
 
-## Skills incluidas (23)
+## Skills incluidas (27)
 
 | Skill | Categoría | Versión | Herramientas | Agentes preferidos |
 |---|---|---:|---|---|
@@ -101,19 +120,27 @@ Generado desde el código fuente para Hive **0.1.0**.
 | `file_manager` | filesystem | 1.0.0 | `fs_list`, `fs_glob`, `fs_exists` | — |
 | `file_read_and_summarize` | filesystem | 1.0.0 | `fs_read`, `fs_exists` | — |
 | `file_writer` | filesystem | 1.0.0 | `fs_read`, `fs_write`, `fs_edit`, `fs_exists` | — |
+| `market_analysis` | trading | 1.0.0 | `market_symbols`, `market_ticker`, `market_ohlcv`, `ta_indicators`, `ta_levels`, `market_trades`, `market_funding` | `market_analyst` |
 | `memory_manager` | agents | 1.0.0 | `memory_write`, `memory_read`, `memory_list`, `memory_search`, `memory_delete` | — |
 | `office_document_manager` | office | 1.0.0 | `office_leer_pdf`, `office_escribir_pdf`, `office_leer_docx`, `office_escribir_docx`, `office_leer_xlsx`, `office_escribir_xlsx`, `office_leer_pptx`, `office_escribir_pptx` | — |
+| `paper_execution` | trading | 1.0.0 | `paper_account`, `market_orderbook`, `paper_order`, `paper_positions`, `paper_close`, `paper_history` | `paper_trader` |
 | `research_and_remember` | agents | 1.0.0 | `web_search`, `web_fetch`, `memory_write` | — |
+| `risk_sizing` | trading | 1.0.0 | `paper_account`, `paper_positions`, `ta_levels`, `ta_indicators`, `market_ticker` | `risk_manager` |
 | `software_engineering` | cli | 1.0.0 | `fs_read`, `fs_write`, `fs_edit`, `fs_list`, `fs_glob`, `fs_exists`, `cli_exec` | `software_engineer` |
+| `strategy_backtest` | trading | 1.0.0 | `market_symbols`, `backtest_run`, `market_ohlcv`, `ta_indicators` | `strategy_researcher` |
 | `task_orchestrator` | agents | 1.2.0 | `get_available_models`, `task_delegate`, `task_list`, `task_status`, `agent_find`, `agent_create`, `bus_publish`, `bus_read` | — |
 | `web_monitor` | web | 1.0.0 | `web_search`, `web_fetch`, `memory_write`, `memory_read` | — |
 | `web_research` | web | 1.0.0 | `web_search`, `web_fetch` | — |
 | `workspace_file_operator` | filesystem | 1.0.0 | `fs_read`, `fs_write`, `fs_edit`, `fs_delete`, `fs_list`, `fs_glob`, `fs_exists` | `workspace_file_operator` |
 
-## Agentes de catálogo (8)
+## Agentes de catálogo (12)
 
 | ID | Nombre | Propósito | Herramientas autorizadas | Skills |
 |---|---|---|---|---|
+| `market_analyst` | Analista de mercado | Lee el mercado cripto con datos y análisis técnico, y entrega una lectura fundamentada con niveles concretos. | `market_ticker`, `market_ohlcv`, `market_orderbook`, `market_trades`, `market_symbols`, `market_funding`, `ta_indicators`, `ta_levels`, `scan_markets`, `arbitrage_scan` | `market_analysis` |
+| `risk_manager` | Gestor de riesgo | Dimensiona posiciones, define invalidación y revisa la exposición del portafolio antes de operar. | `paper_account`, `paper_positions`, `ta_levels`, `ta_indicators`, `market_ticker` | `risk_sizing` |
+| `paper_trader` | Operador simulado | Ejecuta y gestiona operaciones simuladas contra el libro real, y reporta el resultado con evidencia. | `paper_account`, `paper_order`, `paper_positions`, `paper_close`, `paper_history`, `market_orderbook`, `market_ticker` | `paper_execution` |
+| `strategy_researcher` | Investigador de estrategias | Prueba estrategias sobre datos históricos y reporta si superan a comprar y mantener. | `backtest_run`, `market_ohlcv`, `ta_indicators`, `market_symbols` | `strategy_backtest` |
 | `web_researcher` | Investigador web | Investiga preguntas actuales en fuentes web y entrega conclusiones verificables con referencias. | `web_search`, `web_fetch` | `web_research` |
 | `browser_operator` | Operador de navegador | Navega sitios, completa formularios y verifica visualmente el estado final de una operación web. | `browser_*`, `web_fetch` | `browser_automate`, `browser_scrape` |
 | `workspace_file_operator` | Operador de archivos | Crea, lee, edita, organiza y elimina archivos o carpetas dentro del workspace autorizado. | `fs_*` | `workspace_file_operator`, `file_manager` |

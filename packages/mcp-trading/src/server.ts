@@ -19,11 +19,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { PolicyEngine, loadPolicyFromEnv, type PolicyConfig } from "./policy.ts";
 import { InMemoryPaperStore, type PaperStore } from "./paper-engine.ts";
 import type { TradingContext } from "./context.ts";
-import { registerMarketTools } from "./tools/market.ts";
-import { registerAnalysisTools } from "./tools/analysis.ts";
-import { registerPaperTools } from "./tools/paper.ts";
-import { registerExchangeTools } from "./tools/exchange.ts";
-import { registerBacktestTools } from "./tools/backtest.ts";
+import { registerAllTools } from "./tools/register.ts";
 
 export const SERVER_NAME = "hivecrypto-trading";
 export const SERVER_VERSION = "0.1.0";
@@ -69,13 +65,7 @@ export function buildServer(ctx: TradingContext): McpServer {
     }
   );
 
-  // El orden de registro es el orden de tools/list. La spec recomienda que sea
-  // determinista para no invalidar el cache de prompt del cliente en cada arranque.
-  registerMarketTools(server, ctx);
-  registerAnalysisTools(server, ctx);
-  registerPaperTools(server, ctx);
-  registerExchangeTools(server, ctx);
-  registerBacktestTools(server, ctx);
+  registerAllTools(server, ctx);
 
   return server;
 }
