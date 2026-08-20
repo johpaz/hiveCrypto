@@ -99,6 +99,19 @@ export interface CanvasWorkEvent {
   timestamp: number;
 }
 
+/**
+ * Petición del agente para que la pantalla de trading mire hacia un símbolo.
+ * Se guarda sólo la última: es una sugerencia de foco, no una cola de trabajo.
+ */
+export interface TradingFocus {
+  symbol: string;
+  timeframe?: string;
+  support?: number;
+  resistance?: number;
+  note?: string;
+  ts: number;
+}
+
 interface CanvasState {
   isConnected: boolean;
   graphNodes: GraphNode[];
@@ -108,6 +121,9 @@ interface CanvasState {
   // A2UI v0.9 surfaces
   a2uiSurfaces: Map<string, A2UISurface>;
   unseenA2UICount: number;
+
+  /** Último foco pedido por el agente, o null si ya se atendió o descartó. */
+  tradingFocus: TradingFocus | null;
 
   // Actions
   setIsConnected: (connected: boolean) => void;
@@ -125,6 +141,7 @@ interface CanvasState {
   deleteA2UISurface: (surfaceId: string) => void;
   getA2UISurfaces: () => A2UISurface[];
   markA2UISeen: () => void;
+  clearTradingFocus: () => void;
 
   // Init: subscribes to main WS events, returns cleanup fn
   init: () => () => void;
@@ -138,6 +155,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   workEvents: [],
   a2uiSurfaces: new Map(),
   unseenA2UICount: 0,
+  tradingFocus: null,
 
   setIsConnected: (connected) => set({ isConnected: connected }),
   setGraphSnapshot: (nodes, edges) => set({ graphNodes: nodes, graphEdges: edges }),
@@ -354,6 +372,13 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         }
       }),
 
+      ws.subscribe("trading:focus", (msg) => {
+        const d = (msg as { data?: Record<string, unknown> }).data ?? msg;
+        const symbol = (d as Record<string, unknown>).symbol;
+        if (typeof symbol !== "string" || !symbol) return;
+        set({ tradingFocus: { ...(d as object), symbol } as TradingFocus });
+      }),
+
       ws.subscribe("a2ui:deleteSurface", (msg) => {
         const d = (msg.data as Record<string, unknown>) ?? {};
         const surfaceId = d.surfaceId as string;
@@ -365,6 +390,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     return () => unsubs.forEach((u) => u());
   },
+
+  clearTradingFocus: () => set({ tradingFocus: null }),
 
   sendA2UIAction: (action) => {
     useWebSocketStore.getState().send({

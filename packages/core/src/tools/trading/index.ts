@@ -16,6 +16,7 @@ import type { Tool } from "../types.ts";
 import { handlers } from "@johpaz/hivecrypto-mcp-trading";
 import { ToolError } from "@johpaz/hivecrypto-mcp-trading";
 import { getTradingContext } from "./context.ts";
+import { canvasManager } from "../../canvas/canvas-manager.ts";
 
 /** Ejecuta un handler y normaliza el resultado a la forma { ok, ... } de hive. */
 async function run<T>(fn: () => Promise<T>): Promise<object> {
@@ -410,6 +411,59 @@ export function createTools(): Tool[] {
         orderId: typeof p.orderId === "string" ? p.orderId : undefined,
         exchange: ex(p),
       })),
+    },
+
+    // ── PANTALLA ─────────────────────────────────────────────────────────
+    {
+      name: "trading_focus",
+      description:
+        "Hace que la pantalla de trading del usuario muestre un símbolo concreto, opcionalmente con una " +
+        "temporalidad y niveles marcados en el gráfico. No devuelve datos de mercado: sólo dirige la vista. " +
+        "Úsala al terminar un análisis para que el usuario vea en pantalla lo que acabas de explicar. " +
+        "Spanish: muéstrame, enfoca, abre el gráfico de, ponme, ver en pantalla",
+      parameters: {
+        type: "object",
+        properties: {
+          symbol: symbolParam,
+          timeframe: {
+            type: "string",
+            description: "Temporalidad a mostrar. Si se omite, la pantalla mantiene la actual.",
+            enum: ["15m", "1h", "4h", "1d"],
+          },
+          support: { type: "number", description: "Soporte a marcar en el gráfico.", minimum: 0 },
+          resistance: { type: "number", description: "Resistencia a marcar en el gráfico.", minimum: 0 },
+          note: { type: "string", description: "Frase breve que explica por qué miramos aquí." },
+        },
+        required: ["symbol"],
+      },
+      execute: async (p, config) => {
+        const userId = config?.configurable?.user_id;
+        if (!userId) {
+          return { ok: false, error: "No hay sesión de usuario para dirigir la pantalla" };
+        }
+        const sessionId = `canvas:${userId}`;
+
+        // Que no haya pantalla abierta no es un error: el usuario puede estar en
+        // WhatsApp. Se informa y el agente sigue con su respuesta en texto.
+        if (!canvasManager.isSessionConnected(sessionId)) {
+          return {
+            ok: true,
+            delivered: false,
+            note: "No hay una pantalla de trading abierta; el análisis se entrega sólo en texto.",
+          };
+        }
+
+        await canvasManager.sendA2UIMessage(sessionId, "trading:focus", {
+          symbol: str(p.symbol),
+          timeframe: typeof p.timeframe === "string" ? p.timeframe : undefined,
+          support: typeof p.support === "number" ? p.support : undefined,
+          resistance: typeof p.resistance === "number" ? p.resistance : undefined,
+          note: typeof p.note === "string" ? p.note : undefined,
+          ts: Date.now(),
+        });
+
+        return { ok: true, delivered: true, symbol: str(p.symbol) };
+      },
     },
 
     // ── BACKTESTING ──────────────────────────────────────────────────────

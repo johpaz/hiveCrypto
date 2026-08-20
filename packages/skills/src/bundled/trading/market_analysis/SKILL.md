@@ -8,7 +8,7 @@ category: trading
 permissions:
   - internet_access
 dependencies: []
-tools: [market_symbols, market_ticker, market_ohlcv, ta_indicators, ta_levels, market_trades, market_funding]
+tools: [market_symbols, market_ticker, market_ohlcv, ta_indicators, ta_levels, market_trades, market_funding, trading_focus]
 
 triggers:
   - "analiza"
@@ -49,6 +49,11 @@ steps:
     action: market_funding
     instruction: "Sólo si el símbolo es un perpetuo. Funding muy positivo indica exceso de largos apalancados. Si el par es spot, salta este paso sin comentarlo."
     output: derivatives
+
+  - step: 6
+    action: trading_focus
+    instruction: "Dirige la pantalla del usuario al símbolo analizado, con la temporalidad usada y los niveles encontrados. Si no hay pantalla abierta la tool lo indica y no es un fallo: la entrega en texto ya está completa."
+    output: focused
 ---
 
 # Análisis de mercado
@@ -76,3 +81,4 @@ Entrega una lectura del mercado que sirva para tomar una decisión, no un resume
 - Distingue lo que observas de lo que interpretas.
 - Nunca presentes la lectura como una predicción. El análisis describe el estado actual y sus escenarios, no el futuro.
 - Si los indicadores se contradicen entre sí, dilo: es información, no un problema a esconder.
+- Termina enfocando la pantalla en lo que explicaste. El usuario no debería tener que buscar a mano el símbolo del que le acabas de hablar.

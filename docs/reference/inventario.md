@@ -17,7 +17,7 @@ Generado desde el código fuente para Hive **0.1.0**.
 | `@johpaz/hivecrypto-desktop` | `0.1.0` |
 | `apps/hive-desktop/src-tauri/tauri.conf.json` | `0.1.0` |
 
-## Herramientas (79)
+## Herramientas (80)
 
 | Herramienta | Categoría | Descripción |
 |---|---|---|
@@ -98,6 +98,7 @@ Generado desde el código fuente para Hive **0.1.0**.
 | `task_list` | agents | List real delegated task executions for the current user. TaskDoc and JobDoc are the source of truth. Use this instead of agent_find to determine whether work is pending, running, completed, failed, or blocked. |
 | `task_revise` | agents | Send a completed or blocked delegated task back to its worker with concrete feedback, instead of reporting it as done. The worker resumes on the SAME thread — it keeps its prior context, so the feedback only needs to describe what's missing. Use this when a delivery doesn't meet its acceptance criteria and you can't fix it yourself. |
 | `task_status` | agents | Get execution status of one or more delegated tasks. Accepts string or numeric IDs. Spanish: estado tarea delegada, verificar progreso, consultar tarea |
+| `trading_focus` | externa | Hace que la pantalla de trading del usuario muestre un símbolo concreto, opcionalmente con una temporalidad y niveles marcados en el gráfico. No devuelve datos de mercado: sólo dirige la vista. Úsala al terminar un análisis para que el usuario vea en pantalla lo que acabas de explicar. Spanish: muéstrame, enfoca, abre el gráfico de, ponme, ver en pantalla |
 | `web_fetch` | web | Fetch plain content from a URL (lightweight, no JS). Spanish: obtener página, descargar contenido, extraer texto de url |
 | `web_search` | web | Search the web for current information and research. Spanish: buscar en internet, búsqueda web, noticias, información |
 
@@ -120,7 +121,7 @@ Generado desde el código fuente para Hive **0.1.0**.
 | `file_manager` | filesystem | 1.0.0 | `fs_list`, `fs_glob`, `fs_exists` | — |
 | `file_read_and_summarize` | filesystem | 1.0.0 | `fs_read`, `fs_exists` | — |
 | `file_writer` | filesystem | 1.0.0 | `fs_read`, `fs_write`, `fs_edit`, `fs_exists` | — |
-| `market_analysis` | trading | 1.0.0 | `market_symbols`, `market_ticker`, `market_ohlcv`, `ta_indicators`, `ta_levels`, `market_trades`, `market_funding` | `market_analyst` |
+| `market_analysis` | trading | 1.0.0 | `market_symbols`, `market_ticker`, `market_ohlcv`, `ta_indicators`, `ta_levels`, `market_trades`, `market_funding`, `trading_focus` | `market_analyst` |
 | `memory_manager` | agents | 1.0.0 | `memory_write`, `memory_read`, `memory_list`, `memory_search`, `memory_delete` | — |
 | `office_document_manager` | office | 1.0.0 | `office_leer_pdf`, `office_escribir_pdf`, `office_leer_docx`, `office_escribir_docx`, `office_leer_xlsx`, `office_escribir_xlsx`, `office_leer_pptx`, `office_escribir_pptx` | — |
 | `paper_execution` | trading | 1.0.0 | `paper_account`, `market_orderbook`, `paper_order`, `paper_positions`, `paper_close`, `paper_history` | `paper_trader` |
@@ -137,7 +138,7 @@ Generado desde el código fuente para Hive **0.1.0**.
 
 | ID | Nombre | Propósito | Herramientas autorizadas | Skills |
 |---|---|---|---|---|
-| `market_analyst` | Analista de mercado | Lee el mercado cripto con datos y análisis técnico, y entrega una lectura fundamentada con niveles concretos. | `market_ticker`, `market_ohlcv`, `market_orderbook`, `market_trades`, `market_symbols`, `market_funding`, `ta_indicators`, `ta_levels`, `scan_markets`, `arbitrage_scan` | `market_analysis` |
+| `market_analyst` | Analista de mercado | Lee el mercado cripto con datos y análisis técnico, y entrega una lectura fundamentada con niveles concretos. | `market_ticker`, `market_ohlcv`, `market_orderbook`, `market_trades`, `market_symbols`, `market_funding`, `ta_indicators`, `ta_levels`, `scan_markets`, `arbitrage_scan`, `trading_focus` | `market_analysis` |
 | `risk_manager` | Gestor de riesgo | Dimensiona posiciones, define invalidación y revisa la exposición del portafolio antes de operar. | `paper_account`, `paper_positions`, `ta_levels`, `ta_indicators`, `market_ticker` | `risk_sizing` |
 | `paper_trader` | Operador simulado | Ejecuta y gestiona operaciones simuladas contra el libro real, y reporta el resultado con evidencia. | `paper_account`, `paper_order`, `paper_positions`, `paper_close`, `paper_history`, `market_orderbook`, `market_ticker` | `paper_execution` |
 | `strategy_researcher` | Investigador de estrategias | Prueba estrategias sobre datos históricos y reporta si superan a comprar y mantener. | `backtest_run`, `market_ohlcv`, `ta_indicators`, `market_symbols` | `strategy_backtest` |

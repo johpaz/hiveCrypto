@@ -25,6 +25,7 @@ const TRADING_TOOLS = [
   "scan_markets", "arbitrage_scan", "paper_account", "paper_order",
   "paper_positions", "paper_close", "paper_history",
   "exchange_balance", "exchange_order", "exchange_orders", "backtest_run",
+  "trading_focus",
 ];
 
 const CRYPTO_AGENTS = ["market_analyst", "risk_manager", "paper_trader", "strategy_researcher"];
@@ -33,14 +34,20 @@ describe("tools nativas de trading", () => {
   const tools = createTools();
   const names = tools.map(t => t.name);
 
-  test("expone exactamente las 19 operaciones", () => {
+  test("expone exactamente las 20 operaciones", () => {
     expect(names.sort()).toEqual([...TRADING_TOOLS].sort());
   });
 
-  test("cada tool tiene un handler correspondiente", () => {
-    // Si una tool nativa no tuviera handler, se habría implementado la lógica
-    // por duplicado — que es justo lo que la arquitectura evita.
-    expect(Object.keys(handlers).length).toBeGreaterThanOrEqual(TRADING_TOOLS.length);
+  test("cada tool de datos tiene su handler compartido", () => {
+    // Si una tool de trading no tuviera handler, se habría implementado la
+    // lógica por duplicado — que es justo lo que la arquitectura evita.
+    //
+    // La excepción es trading_focus: no es lógica de trading sino una
+    // directiva para la pantalla del usuario, así que no comparte handler y
+    // tampoco se expone por el servidor MCP (un cliente externo no tiene
+    // pantalla de hiveCrypto que enfocar).
+    const withHandler = TRADING_TOOLS.filter(t => t !== "trading_focus");
+    expect(Object.keys(handlers).length).toBeGreaterThanOrEqual(withHandler.length);
   });
 
   test("toda tool declara descripción con sinónimos en español", () => {
@@ -118,6 +125,16 @@ describe("agentes especialistas", () => {
       expect(tools).not.toContain("exchange_order");
     }
     expect(toolsOf("paper_trader")).toContain("paper_order");
+  });
+
+  test("trading_focus sólo lo tiene el analista, y no le da capacidad de operar", () => {
+    // Dirigir la pantalla es inocuo, pero conviene fijar que la tool no se
+    // coló en el allowlist de quien sí puede ejecutar.
+    expect(toolsOf("market_analyst")).toContain("trading_focus");
+    expect(toolsOf("market_analyst")).not.toContain("paper_order");
+    for (const id of ["risk_manager", "paper_trader", "strategy_researcher"]) {
+      expect(toolsOf(id)).not.toContain("trading_focus");
+    }
   });
 
   test("ningún especialista tiene acceso a órdenes reales de exchange", () => {

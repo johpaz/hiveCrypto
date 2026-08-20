@@ -31,6 +31,8 @@ import { AgentActivityStrip } from "@/modules/trading/AgentActivityStrip";
 import { AgentPanel } from "@/modules/trading/AgentPanel";
 import { DelegateButton } from "@/modules/trading/DelegateButton";
 import { useAgentChat } from "@/hooks/useAgentChat";
+import { FocusPrompt } from "@/modules/trading/FocusPrompt";
+import type { TradingFocus } from "@/stores/canvasStore";
 
 const TIMEFRAMES = ["15m", "1h", "4h", "1d"] as const;
 
@@ -71,12 +73,23 @@ export function TradingPage() {
   const quote = account?.account.quote ?? "USDT";
 
   const [agentPanelOpen, setAgentPanelOpen] = useState(false);
+  const [agentLevels, setAgentLevels] = useState<{ support?: number; resistance?: number }>({});
   const { send: sendToAgent, isConnected: agentConnected } = useAgentChat();
 
   /**
    * Manda la frase al coordinador y abre el panel. Se abre siempre: delegar sin
    * ver la respuesta dejaría al usuario sin saber si pasó algo.
    */
+  /** Aplica el foco pedido por el agente: símbolo, temporalidad y niveles. */
+  const followAgentFocus = useCallback((focus: TradingFocus) => {
+    if (focus.symbol !== symbol) {
+      setSymbol(focus.symbol);
+      setSymbolInput(focus.symbol);
+    }
+    if (focus.timeframe && focus.timeframe !== timeframe) setTimeframe(focus.timeframe);
+    setAgentLevels({ support: focus.support, resistance: focus.resistance });
+  }, [symbol, timeframe]);
+
   const delegate = useCallback((prompt: string) => {
     sendToAgent(prompt);
     setAgentPanelOpen(true);
@@ -147,6 +160,8 @@ export function TradingPage() {
   const selectSymbol = (s: string) => {
     setSymbol(s);
     setSymbolInput(s);
+    // Los niveles que marcó el agente eran de otro par: dejan de aplicar.
+    setAgentLevels({});
   };
 
   const createAccount = async () => {
@@ -255,6 +270,8 @@ export function TradingPage() {
         </span>
       </div>
 
+      <FocusPrompt currentSymbol={symbol} onFollow={followAgentFocus} />
+
       <Tabs defaultValue="grafico" className="flex-1">
         <TabsList>
           <TabsTrigger value="grafico">Gráfico</TabsTrigger>
@@ -302,8 +319,16 @@ export function TradingPage() {
                 <CandlestickChart
                   candles={ohlcv?.candles ?? []}
                   indicators={indicators}
-                  support={showLevels ? levels?.support ?? [] : []}
-                  resistance={showLevels ? levels?.resistance ?? [] : []}
+                  support={showLevels
+                    ? (agentLevels.support !== undefined
+                        ? [{ price: agentLevels.support, touches: 0 }]
+                        : levels?.support ?? [])
+                    : []}
+                  resistance={showLevels
+                    ? (agentLevels.resistance !== undefined
+                        ? [{ price: agentLevels.resistance, touches: 0 }]
+                        : levels?.resistance ?? [])
+                    : []}
                   showBollinger={showBollinger}
                   showRsi={showRsi}
                   showMacd={showMacd}
