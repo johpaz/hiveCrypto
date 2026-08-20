@@ -1,0 +1,371 @@
+import type { Config } from "../config/loader";
+import { logger } from "../utils/logger";
+import { ensureHiveDb } from "../storage/bootstrap";
+import { col, fromIndexable } from "../storage/hive";
+import type { AgentDoc, ProviderDoc, McpServerDoc } from "../storage/collections";
+import { buildAgentLoop } from "../agent/agent-loop";
+import { AgentRunner } from "../agent/providers/index";
+import { ChannelManager } from "../channels/manager";
+import { syncToolsToIndex, syncSkillsToIndex, syncPlaybookToIndex } from "../agent/context-compiler";
+import { syncMCPToolsToIndex } from "../mcp/tool-sync";
+import { syncCatalogAgentsToIndex } from "../agent/catalog-selector";
+import { AgentService, createAgentService } from "../agent/service";
+import { mkdirSync } from "node:fs";
+import * as path from "node:path";
+import { resolveAgentId } from "../storage/onboarding";
+import { createMCPManager, type MCPClientManager } from "@johpaz/hivecrypto-mcp";
+import { setMCPManager } from "../mcp/singleton";
+import { startMCPHotReload } from "../mcp/hot-reload";
+import { loadMcpHeaders } from "../storage/crypto";
+import { initializeBrowserService } from "../tools/web/browser-service";
+import { activateBrowserTools } from "../storage/onboarding";
+
+const log = logger.child("gateway:init");
+
+/**
+ * Verifica que exista al menos un usuario en la base de datos
+ */
+async function verifyDatabaseUsers(): Promise<void> {
+  try {
+    await ensureHiveDb();
+
+    const usersCol = await col("users");
+    const userCount = await usersCol.count();
+
+    if (userCount === 0) {
+      const error = new Error("No users found in the database. A valid user is required to start the Hive Gateway.");
+      log.error(error.message);
+      log.error("Please run the onboarding process or manually insert a user.");
+      throw error;
+    }
+
+    log.info(`Database verified: ${userCount} user(s) found`);
+  } catch (error) {
+    log.error(`Database verification failed: ${(error as Error).message}`);
+    throw error;
+  }
+}
+
+/**
+ * Escribe el archivo PID del proceso
+ */
+async function writePidFile(pidFile: string): Promise<void> {
+  try {
+    const dir = path.dirname(pidFile);
+    mkdirSync(dir, { recursive: true });
+    await Bun.write(pidFile, process.pid.toString());
+    log.info(`PID file written: ${pidFile}`);
+  } catch (error) {
+    log.warn(`Could not write PID file: ${(error as Error).message}`);
+    // No throw - PID file is not critical
+  }
+}
+
+/**
+ * Carga la configuración del agente desde la base de datos
+ * @returns Provider y modelo configurados
+ */
+async function loadAgentConfigFromDB(
+  config: Config
+): Promise<{ provider: string; model: string }> {
+  // Último recurso cuando la BD aún no tiene providers/modelos activos (setup inicial)
+  const defaultProvider = "gemini";
+  const defaultModel = "gemini-2.5-flash";
+
+  try {
+    const agentsCol = await col<AgentDoc>("agents");
+    const providersCol = await col<ProviderDoc>("providers");
+
+    // Get coordinator agent ID from database
+    const coordinatorAgentId = await resolveAgentId(null);
+
+    // Obtener configuración del agente coordinador
+    let agentConfig: { provider_id: string | null; model_id: string | null } | undefined;
+    const coordinatorAgent = coordinatorAgentId ? await agentsCol.get(coordinatorAgentId) : undefined;
+    if (coordinatorAgent) {
+      agentConfig = {
+        provider_id: fromIndexable(coordinatorAgent.doc.provider_id),
+        model_id: fromIndexable(coordinatorAgent.doc.model_id),
+      };
+    } else {
+      const coordinators = await agentsCol.findBy("role", "coordinator", { limit: 1 });
+      const fallback = coordinators[0];
+      agentConfig = fallback ? {
+        provider_id: fromIndexable(fallback.doc.provider_id),
+        model_id: fromIndexable(fallback.doc.model_id),
+      } : undefined;
+    }
+
+    // Si el coordinator no tiene modelo, usar el default resuelto desde la BD
+    const { getDefaultLLM } = await import("../agent/llm-client");
+    const defaultLLM = (!agentConfig?.provider_id || !agentConfig?.model_id)
+      ? await getDefaultLLM()
+      : null;
+
+    let provider = agentConfig?.provider_id || defaultLLM?.provider || defaultProvider;
+    let model = agentConfig?.model_id || defaultLLM?.model || defaultModel;
+
+    // Cargar API keys de los providers desde la DB
+    const providers = (await providersCol.scan({}))
+      .filter(p => p.doc.active)
+      .map(p => ({ id: p.doc.id, name: p.doc.name, base_url: p.doc.base_url }));
+
+    if (providers.length > 0) {
+      config.models = config.models || {};
+      config.models.providers = config.models.providers || {};
+
+      const { loadProviderApiKey } = await import("../storage/crypto");
+
+      for (const p of providers) {
+        const apiKey = await loadProviderApiKey(p.id);
+
+        config.models.providers[p.name] = {
+          apiKey,
+          baseUrl: p.base_url || undefined,
+          defaultModel: model,
+          availableModels: [],
+          maxRetries: 3,
+          timeoutMs: 30000,
+        } as any;
+      }
+
+      log.info(`Loaded ${providers.length} provider(s) from DB with API keys`);
+    }
+
+    log.info(`Agent config loaded from DB: ${provider}/${model}`);
+    return { provider, model };
+
+  } catch (error) {
+    log.debug(`Could not read agent config from DB, using defaults: ${defaultProvider}/${defaultModel}`);
+    return { provider: defaultProvider, model: defaultModel };
+  }
+}
+
+/**
+ * Inicializa el agent loop
+ */
+async function initializeAgentLoop(mcpManager?: any): Promise<void> {
+  try {
+    await buildAgentLoop({ mcpManager });
+    log.info("Agent loop initialized");
+  } catch (error) {
+    log.warn(`Agent loop initialization failed: ${(error as Error).message}`);
+    // No throw - agent loop can be rebuilt later
+  }
+}
+
+/**
+ * Inicializa el runner de LLM
+ */
+async function initializeLLMRunner(
+  config: Config,
+  provider: string,
+  model: string
+): Promise<AgentRunner> {
+  try {
+    const runner = new AgentRunner(config);
+    log.info(`LLM runner initialized: ${provider}/${model}`);
+    return runner;
+  } catch (error) {
+    log.error(`Failed to initialize LLM runner: ${(error as Error).message}`);
+    throw error;
+  }
+}
+
+/**
+ * Inicializa el manager de canales
+ */
+async function initializeChannelManager(
+  config: Config
+): Promise<ChannelManager> {
+  try {
+    const channelManager = new ChannelManager(config);
+    await channelManager.initialize();
+    await channelManager.startAll();
+    log.info("Channel manager initialized and started");
+    return channelManager;
+  } catch (error) {
+    log.error(`Failed to initialize channel manager: ${(error as Error).message}`);
+    throw error;
+  }
+}
+
+/**
+ * Función principal de inicialización que orquesta todos los módulos
+ */
+export interface GatewayInitializationResult {
+  agent: AgentService;
+  runner: AgentRunner;
+  channelManager: ChannelManager;
+  provider: string;
+  model: string;
+}
+
+export async function initializeGateway(
+  config: Config,
+  pidFile: string
+): Promise<GatewayInitializationResult> {
+  // Setup mode: 0 usuarios (ensureHiveDb() ya fue llamado antes en server.ts)
+  let setupMode = false;
+  try {
+    const usersCol = await col("users");
+    setupMode = (await usersCol.count()) === 0;
+  } catch {
+    setupMode = true;
+  }
+
+  if (setupMode) {
+    log.info("Setup mode: skipping full initialization — only setup routes will be available");
+    await writePidFile(pidFile);
+    // Return stubs; server.ts checks isSetupMode() before using these
+    return {
+      agent: null as any,
+      runner: null as any,
+      channelManager: null as any,
+      provider: "",
+      model: "",
+    };
+  }
+
+  try {
+    // 1. Verificar base de datos (crítico)
+    await verifyDatabaseUsers();
+
+    // 2. Escribir archivo PID (no crítico)
+    await writePidFile(pidFile);
+
+    // 3. Cargar configuración del agente desde DB
+    const { provider, model } = await loadAgentConfigFromDB(config);
+
+    // 4. Sync HiveDB capability index (tools + skills + playbook + mcp_tools)
+    log.info("[initialize] Syncing HiveDB capability index...")
+    try {
+      const { getHiveDb } = await import("../storage/hivedb");
+      const searchDb = await getHiveDb();
+      await Promise.all([
+        syncToolsToIndex(),
+        syncSkillsToIndex(),
+        syncPlaybookToIndex(),
+        syncMCPToolsToIndex(),
+        syncCatalogAgentsToIndex()
+      ]);
+      // Warmup query: the first search pays reader initialization; do it here
+      // so selector latency stays under budget on the first real message.
+      await searchDb.queryHybrid({ text: "warmup", k: 1 });
+      log.info("[initialize] ✅ HiveDB capability index synced (tools, skills, playbook, mcp_tools, catalog agents)")
+    } catch (err) {
+      log.error(`[initialize] HiveDB index sync failed during startup: ${(err as Error).message}`);
+      // Consider if we should throw or continue. For now, continue but log error.
+    }
+
+    // 5. Crear AgentService (reemplaza la clase Agent legacy)
+    const agent = createAgentService();
+    await agent.initialize();
+
+    // 5b. Initialize Browser Service (agent-browser CLI)
+    let browserAvailable = false;
+
+    try {
+      log.info("Initializing browser automation (agent-browser)...");
+
+      const browserService = initializeBrowserService(config);
+      browserAvailable = await browserService.start();
+
+      if (browserAvailable) {
+        activateBrowserTools();
+      } else {
+        log.warn("⚠️  agent-browser no disponible - browser tools desactivadas");
+        log.warn("   Se instalará automáticamente en primer uso o manual: bun add -g agent-browser");
+      }
+    } catch (error) {
+      log.warn(`Browser Service initialization skipped: ${(error as Error).message}`);
+    }
+
+    // 6. Inicializar MCP Manager y agent loop
+    // MCP se inicializa con los servidores de la config + DB
+    let mcpManager: MCPClientManager | null = null;
+    
+    // Load MCP servers from DB and merge with config
+    const mcpServersCol = await col<McpServerDoc>("mcpServers");
+    const dbServers = (await mcpServersCol.scan({})).filter(s => s.doc.enabled).map(s => s.doc);
+
+    const mcpServersFromDB: Record<string, any> = {};
+    for (const server of dbServers) {
+      try {
+        const mcpServerConfig: any = {
+          transport: server.transport,
+          command: server.command,
+          args: server.args ? JSON.parse(server.args) : [],
+          url: server.url,
+          enabled: true,
+        };
+
+        const headers = await loadMcpHeaders(server.id || server.name);
+        if (Object.keys(headers).length > 0) {
+          mcpServerConfig.headers = headers;
+        }
+
+        mcpServersFromDB[server.id || server.name] = mcpServerConfig;
+      } catch (error) {
+        log.warn(`Failed to load MCP server ${server.name} from DB: ${(error as Error).message}`);
+      }
+    }
+    
+    // Merge config MCP servers with DB servers
+    const configMcpServers = config.mcp?.servers || {};
+    const mergedMcpServers = { ...configMcpServers, ...mcpServersFromDB };
+    
+    if (Object.keys(mergedMcpServers).length > 0) {
+      try {
+        mcpManager = createMCPManager({
+          ...config.mcp,
+          servers: mergedMcpServers,
+        });
+        const mcpLog = logger.child("mcp");
+        mcpManager.setLogHandler((level, context, message) => {
+          mcpLog[level](`[${context}] ${message}`);
+        });
+        await mcpManager.initialize();
+        setMCPManager(mcpManager); // Save to singleton for global access
+        log.info(`MCP Manager initialized with ${Object.keys(mergedMcpServers).length} server(s) from config + DB`);
+        
+        // Start hot reload watcher for dynamic server changes
+        startMCPHotReload(mcpManager);
+        log.info("MCP Hot Reload started - new servers will auto-connect");
+      } catch (error) {
+        log.warn(`MCP Manager initialization failed: ${(error as Error).message}`);
+      }
+    } else {
+      log.info("No MCP servers found in config or DB");
+      // Initialize empty MCP Manager for hot reload to work
+      try {
+        mcpManager = createMCPManager({ servers: {} });
+        const mcpLog2 = logger.child("mcp");
+        mcpManager.setLogHandler((level, context, message) => {
+          mcpLog2[level](`[${context}] ${message}`);
+        });
+        await mcpManager.initialize();
+        setMCPManager(mcpManager);
+        startMCPHotReload(mcpManager);
+        log.info("MCP Hot Reload started - waiting for first server");
+      } catch (error) {
+        log.warn(`Empty MCP Manager initialization failed: ${(error as Error).message}`);
+      }
+    }
+    
+    // Inicializar agent loop con MCP Manager
+    await initializeAgentLoop(mcpManager || undefined);
+
+    // 7. Inicializar LLM runner (crítico)
+    const runner = await initializeLLMRunner(config, provider, model);
+
+    // 8. Inicializar channel manager (crítico)
+    const channelManager = await initializeChannelManager(config);
+
+    return { agent, runner, channelManager, provider, model };
+
+  } catch (error) {
+    log.error(`Gateway initialization failed: ${(error as Error).message}`);
+    throw error;
+  }
+}

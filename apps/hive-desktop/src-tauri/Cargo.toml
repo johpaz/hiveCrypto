@@ -1,0 +1,32 @@
+[package]
+name = "hivecrypto-desktop"
+version = "0.1.0"
+description = "hiveCrypto"
+authors = ["hiveCrypto"]
+license = "MIT"
+edition = "2021"
+rust-version = "1.77.2"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["time"] }
+url = "2"
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-shell = "2"
+tauri-plugin-updater = "2"
+# Reiniciar la app después de instalar una actualización (relaunch()).
+tauri-plugin-process = "2"
+
+# Sólo para activar la captura de micrófono/cámara sobre el WebView de
+# WebKitGTK — ver `enable_media_capture` en main.rs. La versión y las features
+# tienen que ser las mismas que usa tauri, o `PlatformWebview::inner()` devuelve
+# un tipo de otra copia del crate y no compila.
+[target.'cfg(target_os = "linux")'.dependencies]
+webkit2gtk = { version = "2", features = ["v2_40"] }
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]

@@ -1,0 +1,827 @@
+/**
+ * Gateway Command - Refactored with Installation Adapters
+ * 
+ * Manages the Hive Gateway lifecycle using the installation adapter system.
+ * Each installation method (Docker, Bun Global, Binary, etc.) is handled
+ * by its specific adapter, providing clean separation of concerns.
+ */
+
+import { loadConfig, startGateway, logger, getHiveDir } from "@johpaz/hivecrypto-core";
+import { existsSync, mkdirSync, writeFileSync, readFileSync, unlinkSync, openSync } from "node:fs";
+import * as path from "node:path";
+import { spawn, ChildProcess } from "child_process";
+import { embeddedUI } from "../ui-bundle.generated";
+import pkg from "../../../../package.json";
+
+// Import adapter system
+import {
+  detectAdapter,
+  DockerAdapter,
+  BunGlobalAdapter,
+  BinaryAdapter,
+  type InstallationAdapter,
+  type GatewayConfig,
+  DEFAULT_GATEWAY_CONFIG,
+  PORTS,
+  getHiveDir as getAdapterHiveDir,
+  findFreePort,
+  waitForHttpPort,
+  isDevMode,
+  isChildProcess,
+  getDistDir,
+} from "../adapters";
+
+const children: ChildProcess[] = [];
+
+/**
+ * Get the active installation adapter
+ * Cached to avoid repeated detection
+ */
+let _adapter: InstallationAdapter | null = null;
+
+async function getAdapter(): Promise<InstallationAdapter> {
+  if (!_adapter) {
+    _adapter = await detectAdapter({ verbose: false });
+  }
+  return _adapter;
+}
+
+/**
+ * Start UI server with embedded or filesystem assets
+ */
+function startUIServer(
+  uiDir: string | null,
+  gatewayPort: number,
+  uiPort: number
+): void {
+  const configScript = `<script>window.__HIVE_CONFIG__={"apiUrl":"http://localhost:${gatewayPort}","wsUrl":"ws://localhost:${gatewayPort}"}</script>`;
+  const useEmbedded = embeddedUI.size > 0;
+
+  Bun.serve({
+    hostname: "0.0.0.0",
+    port: uiPort,
+    async fetch(req) {
+      const url = new URL(req.url);
+      let subPath = url.pathname === "/" ? "/index.html" : url.pathname;
+      // SPA fallback: rutas sin extensión → index.html
+      if (!path.extname(subPath)) subPath = "/index.html";
+
+      if (useEmbedded) {
+        const isIndex = subPath === "/index.html" || !embeddedUI.has(subPath);
+        const entry = embeddedUI.get(subPath) ?? embeddedUI.get("/index.html")!;
+        if (isIndex) {
+          const html = entry.data.toString("utf8").replace("</head>", `${configScript}</head>`);
+          return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+        }
+        const bytes = entry.data as Uint8Array;
+        const body = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+        return new Response(body, { headers: { "Content-Type": entry.mime } });
+      }
+
+      // Filesystem path (npm / Docker)
+      const filePath = path.join(uiDir!, subPath);
+      const file = Bun.file(filePath);
+      if (!(await file.exists())) {
+        const index = Bun.file(path.join(uiDir!, "index.html"));
+        if (await index.exists()) {
+          const html = (await index.text()).replace("</head>", `${configScript}</head>`);
+          return new Response(html, { headers: { "Content-Type": "text/html" } });
+        }
+        return new Response("Not found", { status: 404 });
+      }
+      if (subPath === "/index.html") {
+        const html = (await file.text()).replace("</head>", `${configScript}</head>`);
+        return new Response(html, { headers: { "Content-Type": "text/html" } });
+      }
+      return new Response(file);
+    },
+  });
+}
+
+/**
+ * Cleanup child processes on exit
+ */
+function cleanup() {
+  if (children.length === 0) return;
+  console.log("\n🧹 Limpiando procesos hijos...");
+  for (const child of children) {
+    if (child.pid) {
+      try {
+        if (process.platform !== "win32") {
+          process.kill(-child.pid, "SIGTERM");
+        } else {
+          child.kill("SIGTERM");
+        }
+      } catch {
+        child.kill("SIGTERM");
+      }
+    }
+  }
+}
+
+// Signal handlers
+process.on("SIGINT", () => {
+  cleanup();
+  process.exit(0);
+});
+
+process.on("SIGTERM", () => {
+  cleanup();
+  process.exit(0);
+});
+
+process.on("exit", () => {
+  cleanup();
+});
+
+/**
+ * Get default PID file path
+ */
+function getDefaultPidFile(): string {
+  return path.join(getHiveDir(), "gateway.pid");
+}
+
+/**
+ * Get log file path
+ */
+function getLogFile(): string {
+  return path.join(getHiveDir(), "logs", "gateway.log");
+}
+
+/**
+ * Get PID file path from config or default
+ */
+async function getPidFile(): Promise<string> {
+  try {
+    const config = await loadConfig();
+    return config.gateway?.pidFile || getDefaultPidFile();
+  } catch {
+    return getDefaultPidFile();
+  }
+}
+
+/**
+ * Ensure log directory exists
+ */
+function ensureLogDir(): void {
+  const logDir = path.dirname(getLogFile());
+  if (!existsSync(logDir)) {
+    mkdirSync(logDir, { recursive: true });
+  }
+}
+
+/**
+ * Open browser based on platform
+ */
+function openBrowser(url: string): void {
+  const platform = process.platform;
+  let shellCmd: string;
+
+  if (platform === "win32") {
+    shellCmd = `start "" "${url}"`;
+  } else if (platform === "darwin") {
+    shellCmd = `open "${url}"`;
+  } else {
+    shellCmd = `gio open "${url}" 2>/dev/null || xdg-open "${url}" 2>/dev/null || sensible-browser "${url}" 2>/dev/null || x-www-browser "${url}" 2>/dev/null || true`;
+  }
+
+  console.log(`🌐 Abriendo navegador en ${url}`);
+
+  try {
+    const shell = platform === "win32" ? "cmd" : "/bin/sh";
+    const shellArg = platform === "win32" ? "/c" : "-c";
+    const proc = Bun.spawn([shell, shellArg, shellCmd], {
+      stdout: "ignore",
+      stderr: "ignore",
+      stdin: "ignore",
+    });
+    proc.unref();
+  } catch {
+    console.log(`\n🌐 Abre Hive aquí: ${url}\n`);
+  }
+}
+
+/**
+ * Check if setup mode is needed
+ */
+async function isSetupMode(): Promise<boolean> {
+  const hiveDir = getHiveDir();
+  const dbPath = path.join(hiveDir, "data", "hivedb");
+  return !existsSync(dbPath);
+}
+
+/**
+ * Kill any process listening on a given TCP port (cross-platform)
+ */
+async function killPortProcess(port: number): Promise<void> {
+  try {
+    if (process.platform === "win32") {
+      const result = Bun.spawnSync(["netstat", "-ano"], { stderr: "pipe" });
+      for (const line of result.stdout.toString().split("\n")) {
+        if (line.includes(`:${port} `) && line.includes("LISTENING")) {
+          const pid = line.trim().split(/\s+/).pop();
+          if (pid && !isNaN(parseInt(pid, 10))) {
+            Bun.spawnSync(["taskkill", "/PID", pid, "/F"], { stderr: "pipe" });
+          }
+        }
+      }
+    } else {
+      const result = Bun.spawnSync(["fuser", "-k", `${port}/tcp`], { stderr: "pipe" });
+      if (result.exitCode !== 0) {
+        const lsof = Bun.spawnSync(["lsof", "-ti", `tcp:${port}`], { stderr: "pipe" });
+        const pids = lsof.stdout.toString().trim().split("\n").filter(Boolean);
+        for (const pid of pids) {
+          try { process.kill(parseInt(pid, 10), "SIGTERM"); } catch { }
+        }
+      }
+    }
+    await Bun.sleep(500);
+  } catch { }
+}
+
+/**
+ * Check if gateway is running using the adapter
+ */
+async function isRunning(): Promise<boolean> {
+  // HTTP health check first — if the port responds, something is running
+  // regardless of PID file or adapter state
+  try {
+    const coreConfig = loadConfig();
+    const port = coreConfig?.gateway?.port ?? 18790;
+    const res = await fetch(`http://127.0.0.1:${port}/health`, {
+      signal: AbortSignal.timeout(600),
+    });
+    if (res.ok) return true;
+  } catch {
+    // Nothing listening on the port — continue to other checks
+  }
+
+  try {
+    // Try adapter first
+    const adapter = await getAdapter();
+    const adapterRunning = await adapter.isRunning();
+    if (adapterRunning) {
+      return true;
+    }
+  } catch {
+    // Adapter check failed, fall through to PID check
+  }
+
+  // Fallback to PID file check
+  const pidFile = await getPidFile();
+  if (!existsSync(pidFile)) return false;
+
+  const pid = parseInt(readFileSync(pidFile, "utf-8").trim(), 10);
+  if (isNaN(pid)) return false;
+
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    try {
+      unlinkSync(pidFile);
+    } catch { }
+    return false;
+  }
+}
+
+/**
+ * Wait for gateway port to be ready
+ */
+async function waitForPort(port: number, timeout: number = 30000): Promise<boolean> {
+  return waitForHttpPort(port, "/health", timeout);
+}
+
+/**
+ * Wait for Vite dev server
+ */
+async function waitForVite(port: number, timeout: number = 30000): Promise<boolean> {
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}`, {
+        method: "HEAD",
+        signal: AbortSignal.timeout(200),
+      });
+      if (response.ok || response.status === 200) {
+        return true;
+      }
+    } catch {
+      // Port not ready yet
+    }
+    await Bun.sleep(200);
+  }
+  return false;
+}
+
+/**
+ * Start command - main entry point
+ */
+export async function start(flags: string[]): Promise<void> {
+  const daemon = flags.includes("--daemon");
+  const skipCheck = flags.includes("--skip-check");
+  const devInternal = flags.includes("--dev-internal");
+
+  const isDev = isDevMode();
+  const isChild = isChildProcess();
+
+  // Detect and set adapter
+  const adapter = await getAdapter();
+  const config = await adapter.getConfig();
+
+  // Skip onboarding check if running as child process
+  const isGatewayChild = process.env.HIVE_GATEWAY_CHILD === "1";
+
+  if (!skipCheck && await isRunning()) {
+    console.log("⚠️  Hive Gateway ya está corriendo");
+    return;
+  }
+
+  // Load core config for logger settings
+  try {
+    const coreConfig = await loadConfig();
+    if (coreConfig.logging?.level) {
+      logger.setLevel(coreConfig.logging.level);
+    }
+  } catch {
+    // Use default logger settings
+  }
+
+  // Show banner only if not running as child process
+  if (!isGatewayChild) {
+    console.log(`
+ ╔═══════════════════════════════════════════╗
+ ║                                            ║
+ ║   ██╗  ██╗██╗██╗   ██╗███████╗             ║
+ ║   ██║  ██║██║██║   ██║██╔════╝             ║
+ ║   ███████║██║██║   ██║█████╗               ║
+ ║   ██╔══██║██║╚██╗ ██╔╝██╔══╝               ║
+ ║   ██║  ██║██║ ╚████╔╝ ███████╗             ║
+ ║   ╚═╝  ╚═╝╚═╝  ╚═══╝  ╚══════╝             ║
+ ║                                            ║
+ ║   Personal Swarm AI Gateway — v${pkg.version}       ║
+ ╚════════════════════════════════════════════╝
+
+📦 Installation: ${adapter.name}
+`);
+  }
+
+  // Handle daemon mode
+  if (daemon) {
+    ensureLogDir();
+    const logFile = getLogFile();
+    const child = spawn(process.execPath, [process.argv[1] || "", "start", "--skip-check"], {
+      detached: true,
+      stdio: ["ignore", openSync(logFile, "a"), openSync(logFile, "a")],
+      env: { ...process.env, HIVE_GATEWAY_CHILD: "1" },
+    });
+    child.unref();
+    writeFileSync(await getPidFile(), child.pid?.toString() || "");
+    console.log(`✅ Hive Gateway iniciado en modo daemon (PID: ${child.pid})`);
+    console.log(`   Logs: ${logFile}`);
+    return;
+  }
+
+  // Development mode
+  if (isDev) {
+    await handleDevMode(adapter, config.gateway, daemon);
+    return;
+  }
+
+  // Production mode
+  await handleProductionMode(adapter, config.gateway, daemon);
+}
+
+/**
+ * Handle development mode startup
+ */
+async function handleDevMode(
+  adapter: InstallationAdapter,
+  gatewayConfig: GatewayConfig,
+  daemon: boolean
+): Promise<void> {
+  if (isChildProcess()) {
+    // Child process: just start gateway
+    logger.info("Starting Gateway server (child process)...");
+    const coreConfig = await loadConfig();
+    await startGateway(coreConfig);
+    return;
+  }
+
+  // Parent process: start Vite and Gateway
+  const hiveUiPath = path.join(process.cwd(), "packages/hive-ui");
+  const hasVite = existsSync(path.join(hiveUiPath, "package.json"));
+
+  if (hasVite) {
+    console.log("🎨 Iniciando Vite (UI)...\n");
+    const viteProcess = spawn("bun", ["run", "dev"], {
+      cwd: hiveUiPath,
+      stdio: ["ignore", "pipe", "pipe"],
+      detached: true,
+    });
+
+    viteProcess.stdout?.on("data", (data) => {
+      const lines = data.toString().split("\n");
+      for (const line of lines) {
+        if (line.trim()) console.log(`[Vite] ${line}`);
+      }
+    });
+
+    viteProcess.stderr?.on("data", (data) => {
+      const lines = data.toString().split("\n");
+      for (const line of lines) {
+        if (line.trim()) console.error(`[Vite] ${line}`);
+      }
+    });
+
+    viteProcess.on("error", (error) => {
+      console.error(`❌ Error iniciando Vite: ${error.message}`);
+    });
+
+    if (!daemon) {
+      children.push(viteProcess);
+    } else {
+      viteProcess.unref();
+    }
+  }
+
+  // Verify port is free before spawning children
+  {
+    const portBusy = await (async () => {
+      try {
+        const r = await fetch(`http://127.0.0.1:${gatewayConfig.port}/health`, { signal: AbortSignal.timeout(500) });
+        return r.ok;
+      } catch { return false; }
+    })();
+    if (portBusy) {
+      // Try to free it (works for local processes; silently fails for Docker/root processes)
+      await killPortProcess(gatewayConfig.port);
+      await Bun.sleep(800);
+      const stillBusy = await (async () => {
+        try {
+          const r = await fetch(`http://127.0.0.1:${gatewayConfig.port}/health`, { signal: AbortSignal.timeout(500) });
+          return r.ok;
+        } catch { return false; }
+      })();
+      if (stillBusy) {
+        const manualCmd = process.platform === "win32"
+          ? `netstat -ano | findstr :${gatewayConfig.port}  → taskkill /PID <pid> /F`
+          : `sudo fuser -k ${gatewayConfig.port}/tcp`;
+        console.error(`\n❌ El puerto ${gatewayConfig.port} está ocupado por otro proceso (Docker u otro servicio).`);
+        console.error(`   Detén el servicio antes de iniciar el modo dev:`);
+        console.error(`   • Docker:  docker stop $(docker ps -q --filter publish=${gatewayConfig.port})`);
+        console.error(`   • Hive:    hive stop`);
+        console.error(`   • Manual:  ${manualCmd}\n`);
+        return;
+      }
+    }
+  }
+
+  // Spawn Gateway child process
+  let gwExitedEarly = false;
+  const spawnGateway = (): ReturnType<typeof spawn> => {
+    const gw = spawn(process.execPath, [process.argv[1] || "", "start", "--skip-check", "--dev-internal"], {
+      detached: true,
+      stdio: ["ignore", "pipe", "pipe"],
+      env: { ...process.env, HIVE_DEV: "true", HIVE_GATEWAY_CHILD: "1" },
+    });
+
+    gw.stdout?.on("data", (data) => {
+      const lines = data.toString().split("\n");
+      for (const line of lines) {
+        if (line.trim()) console.log(`[Gateway] ${line}`);
+      }
+    });
+
+    gw.stderr?.on("data", (data) => {
+      const lines = data.toString().split("\n");
+      for (const line of lines) {
+        if (line.trim()) console.error(`[Gateway] ${line}`);
+      }
+    });
+
+    gw.on("error", (error) => {
+      console.error(`❌ Error iniciando Gateway: ${error.message}`);
+    });
+
+    gw.on("exit", (code) => {
+      if (code === 0) {
+        console.log("[Gateway] Reiniciando tras setup...");
+        const newGw = spawnGateway();
+        const idx = children.indexOf(gw);
+        if (idx !== -1) children.splice(idx, 1, newGw);
+      } else if (code !== null) {
+        gwExitedEarly = true;
+      }
+    });
+
+    if (!daemon) {
+      children.push(gw);
+    } else {
+      gw.unref();
+    }
+
+    return gw;
+  };
+
+  const gatewayProcess = spawnGateway();
+
+  // Wait for services
+  console.log("⏳ Esperando servicios...");
+  const [viteReady, gatewayReady] = await Promise.all([
+    hasVite ? waitForVite(5173, 30000) : Promise.resolve(true),
+    waitForHttpPort(18790, "/health", 30000),
+  ]);
+
+  // Give the child a moment to potentially fail before we declare success
+  await Bun.sleep(600);
+
+  if (gwExitedEarly) {
+    const portCheckCmd = process.platform === "win32"
+      ? `netstat -ano | findstr :${gatewayConfig.port}`
+      : `sudo fuser ${gatewayConfig.port}/tcp`;
+    console.error(`\n❌ El proceso Gateway terminó inesperadamente.`);
+    console.error(`   El puerto ${gatewayConfig.port} puede estar ocupado por otro servicio.`);
+    console.error(`   Revisa con: ${portCheckCmd}\n`);
+    return;
+  }
+
+  if (!viteReady && hasVite) {
+    console.error("⚠️  Vite no respondió a tiempo");
+  }
+  if (!gatewayReady) {
+    console.error("⚠️  Gateway no respondió a tiempo");
+    return;
+  }
+
+  console.log("✅ Servicios listos\n");
+
+  // Open browser - en desarrollo, Gateway sirve la UI igual que en producción.
+  // Poll /api/setup/status (same as production mode) so the decision is based on
+  // the gateway's own check (users count == 0), not just whether the DB file exists.
+  const browserPort = gatewayConfig.port;
+  let setupMode = await isSetupMode(); // fallback default
+  {
+    const deadline = Date.now() + 10_000;
+    while (Date.now() < deadline) {
+      try {
+        const res = await fetch(`http://127.0.0.1:${browserPort}/api/setup/status`, {
+          signal: AbortSignal.timeout(1000),
+        });
+        if (res.ok) {
+          const body = await res.json() as { setupMode?: boolean };
+          setupMode = body.setupMode === true;
+          break;
+        }
+        // 503 = gateway still initializing ("starting" phase) — retry
+      } catch { }
+      await Bun.sleep(300);
+    }
+  }
+  const url = setupMode ? `http://localhost:${browserPort}/setup` : `http://localhost:${browserPort}`;
+
+  console.log(`
+╔════════════════════════════════════════╗
+║  🐝  Hive — Modo Desarrollo            ║
+╠════════════════════════════════════════╣
+║  UI:        ${url.padEnd(24)}║
+║  API:       http://127.0.0.1:18790     ║
+║  WebSocket: ws://127.0.0.1:18790/ws    ║
+║  Actividad: ws://127.0.0.1:18790/canvas║
+║  Vite HMR:  http://localhost:5173      ║
+╠════════════════════════════════════════╣
+║  ${setupMode ? "🎉 Primer arranque — abriendo setup..." : "Administra tu Hive aquí                "}║
+╚════════════════════════════════════════╝
+`);
+
+  openBrowser(url);
+
+  if (!daemon) {
+    await new Promise(() => { }); // Infinite wait
+  }
+}
+
+/**
+ * Handle production mode startup
+ */
+async function handleProductionMode(
+  adapter: InstallationAdapter,
+  gatewayConfig: GatewayConfig,
+  daemon: boolean
+): Promise<void> {
+  if (isChildProcess()) {
+    const coreConfig = await loadConfig();
+    await startGateway(coreConfig, embeddedUI);
+    return;
+  }
+
+  // Get UI directory from adapter config
+  const adapterConfig = await adapter.getConfig();
+  // Detect Docker environment: either DockerAdapter or BinaryAdapter in Docker container
+  const isDocker = adapterConfig.type === "docker"
+    || (adapterConfig.type === "binary" && process.env.HIVE_UI_DIR === "/app/ui");
+
+  // The gateway child process serves both the API and the UI on the same port.
+  // No separate UI server needed — always open the browser on the gateway port.
+  const uiPort = gatewayConfig.port;
+
+  // Spawn Gateway child process
+  const spawnGatewayProd = (): ReturnType<typeof spawn> => {
+    // Determine the correct command to spawn the gateway child process.
+    // Three cases:
+    //   1. Docker container (/app/hive-server)
+    //   2. Bundled JS or TS source → bun <script> start --skip-check
+    //   3. Compiled Bun binary (no .js/.ts extension) → re-exec process itself
+    const scriptPath = process.argv[1] || "";
+    const isDockerContainer = process.env.HIVE_UI_DIR === "/app/ui";
+    const isBunScript = scriptPath.endsWith(".js") || scriptPath.endsWith(".ts");
+
+    let command: string;
+    let args: string[];
+
+    if (isDockerContainer) {
+      // Running inside Docker container
+      command = "/app/hive-server";
+      args = ["start", "--skip-check"];
+    } else if (isBunScript) {
+      // Bundled JS (npm package) or TypeScript source: use Bun runtime
+      command = process.execPath;
+      args = [scriptPath, "start", "--skip-check"];
+    } else {
+      // Compiled Bun binary: process.execPath IS the binary
+      command = process.execPath;
+      args = ["start", "--skip-check"];
+    }
+
+    const gw = spawn(command, args, {
+      detached: true,
+      stdio: ["ignore", "pipe", "pipe"],
+      env: { ...process.env, HIVE_GATEWAY_CHILD: "1", NO_BROWSER: "1", ...(getDistDir() ? { HIVE_DIST_DIR: getDistDir()! } : {}) },
+    });
+
+    gw.stdout?.on("data", (data) => {
+      const lines = data.toString().split("\n");
+      for (const line of lines) {
+        if (line.trim()) console.log(`[Gateway] ${line}`);
+      }
+    });
+
+    gw.stderr?.on("data", (data) => {
+      const lines = data.toString().split("\n");
+      for (const line of lines) {
+        if (line.trim()) console.error(`[Gateway] ${line}`);
+      }
+    });
+
+    gw.on("error", (error) => {
+      console.error(`❌ Error iniciando Gateway: ${error.message}`);
+    });
+
+    gw.on("exit", (code) => {
+      if (code === 0) {
+        console.log("[Gateway] Reiniciando tras setup...");
+        const newGw = spawnGatewayProd();
+        const idx = children.indexOf(gw);
+        if (idx !== -1) children.splice(idx, 1, newGw);
+      }
+    });
+
+    children.push(gw);
+    return gw;
+  };
+
+  spawnGatewayProd();
+
+  // Open browser when gateway is ready
+  waitForPort(gatewayConfig.port, 30000).then(async () => {
+    let needsSetup = false;
+    try {
+      const res = await fetch(`http://127.0.0.1:${gatewayConfig.port}/api/setup/status`, {
+        signal: AbortSignal.timeout(3000),
+      });
+      const body = await res.json() as { setupMode?: boolean };
+      needsSetup = body.setupMode === true;
+    } catch {
+      const hiveDir = getHiveDir();
+      const dbPath = path.join(hiveDir, "data", "hivedb");
+      needsSetup = !existsSync(dbPath);
+    }
+
+    const url = needsSetup ? `http://localhost:${uiPort}/setup` : `http://localhost:${uiPort}`;
+
+    if (needsSetup) {
+      console.log(`
+╔════════════════════════════════════════╗
+║  🎉  ¡Bienvenido a Hive!               ║
+╠════════════════════════════════════════╣
+║  Abriendo configuración en tu browser  ║
+║  ${url.padEnd(38)}║
+╚════════════════════════════════════════╝
+`);
+    } else {
+      console.log(`\n🌐 Hive listo en: ${url}\n`);
+    }
+
+    openBrowser(url);
+  });
+
+  await new Promise(() => { }); // Keep parent alive
+}
+
+/**
+ * Stop command
+ */
+export async function stop(): Promise<void> {
+  const adapter = await getAdapter();
+
+  // Try adapter stop first
+  try {
+    if (await adapter.isRunning()) {
+      await adapter.stop();
+      console.log("✅ Hive Gateway detenido");
+      return;
+    }
+  } catch {
+    // Adapter stop failed, fall through to manual stop
+  }
+
+  // Fallback to manual PID-based stop
+  if (!(await isRunning())) {
+    console.log("⚠️  Hive Gateway no está corriendo");
+    return;
+  }
+
+  const pidFile = await getPidFile();
+  const pid = parseInt(readFileSync(pidFile, "utf-8").trim(), 10);
+
+  try {
+    process.kill(pid, "SIGTERM");
+    unlinkSync(pidFile);
+    console.log("✅ Hive Gateway detenido");
+  } catch (e) {
+    console.error("❌ Error deteniendo el Gateway:", e);
+  }
+}
+
+/**
+ * Status command
+ */
+export async function status(flags: string[]): Promise<void> {
+  const adapter = await getAdapter();
+  const adapterConfig = await adapter.getConfig();
+  const running = await adapter.isRunning();
+  const hiveDir = getHiveDir();
+
+  console.log("🐝 Hive Gateway Status\n");
+
+  const coreConfig = await loadConfig();
+  const pid = await adapter.getPid();
+
+  console.log(`Estado:        ${running ? "✅ Corriendo" : "⏹️  Detenido"}`);
+  if (running && pid) {
+    console.log(`PID:           ${pid}`);
+  }
+  console.log(`Installation:  ${adapter.name} (${adapterConfig.type})`);
+  console.log(`Puerto:        ${adapterConfig.gateway.port}`);
+  console.log(`Host:          ${adapterConfig.gateway.host}`);
+
+  const provider = coreConfig.models?.defaultProvider || "no configurado";
+  const model = (coreConfig.models as any)?.defaults?.[provider] || (coreConfig.models as any)?.defaults?.default || "no configurado";
+  console.log(`Modelo:        ${provider} / ${model}`);
+  console.log(`Home:          ${hiveDir}`);
+  console.log(`Logs:          ${getLogFile()}`);
+
+  if (flags.includes("--json")) {
+    console.log("\n" + JSON.stringify({
+      running,
+      pid,
+      type: adapterConfig.type,
+      config: adapterConfig,
+    }, null, 2));
+  }
+}
+
+/**
+ * Reload command
+ */
+export async function reload(): Promise<void> {
+  if (!(await isRunning())) {
+    console.log("⚠️  Hive Gateway no está corriendo");
+    return;
+  }
+
+  if (process.platform === "win32") {
+    console.log("⚠️  Recarga en caliente no disponible en Windows. Reinicia el gateway para aplicar cambios.");
+    return;
+  }
+
+  const pidFile = await getPidFile();
+  const pid = parseInt(readFileSync(pidFile, "utf-8").trim(), 10);
+
+  try {
+    process.kill(pid, "SIGHUP");
+    console.log("✅ Configuración recargada");
+  } catch (e) {
+    console.error("❌ Error recargando configuración:", e);
+  }
+}

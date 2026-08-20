@@ -1,0 +1,42 @@
+services:
+  hive:
+    image: johpaz/hive-agents:latest
+    ports:
+      - "18790:18790"
+    volumes:
+      - hive-data:/root/.hivecrypto
+    environment:
+      HIVE_HOST: 0.0.0.0
+      HIVE_PORT: 18790
+      # Ollama running on the host machine — host.docker.internal resolves via extra_hosts below
+      OLLAMA_HOST: http://host.docker.internal:11434
+      HIVE_PUBLIC_URL: ${HIVE_PUBLIC_URL:-}
+      NO_BROWSER: "1"
+      HIVE_UI_DIR: /app/ui
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -O- http://127.0.0.1:18790/health 2>/dev/null | grep -q status" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.hivecrypto.rule=Host(`${HIVE_DOMAIN}`)
+      - traefik.http.routers.hivecrypto.entrypoints=web,websecure
+      - traefik.http.routers.hivecrypto.tls=true
+      - traefik.http.routers.hivecrypto.tls.certresolver=mytlschallenge
+      - traefik.http.routers.hivecrypto.middlewares=hive-headers@docker
+      - traefik.http.middlewares.hive-headers.headers.SSLRedirect=true
+      - traefik.http.middlewares.hive-headers.headers.STSSeconds=315360000
+      - traefik.http.services.hivecrypto.loadbalancer.server.port=18790
+    networks:
+      - n8n_evoapi
+
+networks:
+  n8n_evoapi:
+    external: true
+volumes:
+  hive-data:

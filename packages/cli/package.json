@@ -1,0 +1,31 @@
+{
+  "name": "@johpaz/hivecrypto-cli",
+  "version": "0.1.0",
+  "description": "Hive CLI — Command line interface for the Hive AI Gateway",
+  "bin": {
+    "hivecrypto": "./dist/hivecrypto.js"
+  },
+  "main": "./dist/hivecrypto.js",
+  "license": "MIT",
+  "files": [
+    "dist/hivecrypto.js",
+    "dist/hivecrypto.cmd",
+    "dist/hivecrypto.ps1",
+    "dist/ui",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "bun build src/index.ts --outfile dist/hivecrypto.js --target bun",
+    "postbuild": "bun run scripts/postbuild.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@clack/prompts": "1.1.0",
+    "@johpaz/hivecrypto-core": "^0.1.0",
+    "toon-format-parser": "1.1.3"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "@types/bun": "^1.3.13"
+  }
+}

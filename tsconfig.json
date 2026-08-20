@@ -1,0 +1,87 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "paths": {
+      "@johpaz/hivecrypto": [
+        "./packages/core/src/index.ts"
+      ],
+      "@johpaz/hivecrypto/agent/*": [
+        "./packages/core/src/agent/*"
+      ],
+      "@johpaz/hivecrypto/channels/*": [
+        "./packages/core/src/channels/*"
+      ],
+      "@johpaz/hivecrypto/storage/*": [
+        "./packages/core/src/storage/*"
+      ],
+      "@johpaz/hivecrypto/tools/*": [
+        "./packages/core/src/tools/*"
+      ],
+      "@johpaz/hivecrypto/config/*": [
+        "./packages/core/src/config/*"
+      ],
+      "@johpaz/hivecrypto/utils/*": [
+        "./packages/core/src/utils/*"
+      ],
+      "@johpaz/hivecrypto/gateway/*": [
+        "./packages/core/src/gateway/*"
+      ],
+      "@johpaz/hivecrypto/mcp/*": [
+        "./packages/mcp/src/*"
+      ],
+      "@johpaz/hivecrypto/skills/*": [
+        "./packages/skills/src/*"
+      ],
+      "@johpaz/hivecrypto-core": [
+        "./packages/core/src/index.ts"
+      ],
+      "@johpaz/hivecrypto-core/*": [
+        "./packages/core/src/*"
+      ],
+      "@johpaz/hivecrypto-mcp": [
+        "./packages/mcp/src/index.ts"
+      ],
+      "@johpaz/hivecrypto-mcp/*": [
+        "./packages/mcp/src/*"
+      ],
+      "@johpaz/hivecrypto-skills": [
+        "./packages/skills/src/index.ts"
+      ],
+      "@johpaz/hivecrypto-skills/*": [
+        "./packages/skills/src/*"
+      ],
+      "@johpaz/hivecrypto-cli": [
+        "./packages/cli/src/index.ts"
+      ],
+      "@johpaz/hivecrypto-tools": [
+        "./packages/tools/src/index.ts"
+      ],
+      "@johpaz/hivecrypto-tools/*": [
+        "./packages/tools/src/*"
+      ],
+      "@/*": [
+        "./packages/hive-ui/src/*"
+      ],
+      "@johpaz/hive-tts": [
+        "./packages/tts/src/index.ts"
+      ],
+      "@johpaz/hive-tts/client": [
+        "./packages/tts/src/client.ts"
+      ],
+      "@johpaz/hive-tts/server": [
+        "./packages/tts/src/server.ts"
+      ]
+    }
+  },
+  "include": [
+    "packages/*/src/**/*",
+    "packages/hive-ui/src/**/*",
+    "tests/**/*",
+    "scripts/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

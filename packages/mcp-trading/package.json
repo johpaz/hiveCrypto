@@ -1,0 +1,33 @@
+{
+  "name": "@johpaz/hivecrypto-mcp-trading",
+  "version": "0.1.0",
+  "private": true,
+  "description": "hiveCrypto Trading MCP Server — servidor MCP (revisión 2026-07-28) para datos de mercado, análisis técnico y paper trading",
+  "main": "./src/index.ts",
+  "license": "MIT",
+  "files": [
+    "src/"
+  ],
+  "scripts": {
+    "start": "bun run src/bin/http.ts",
+    "start:stdio": "bun run src/bin/stdio.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.0.0",
+    "ccxt": "^4.5.9",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "@types/bun": "^1.3.13"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts",
+    "./policy": "./src/policy.ts",
+    "./indicators": "./src/indicators.ts",
+    "./paper-engine": "./src/paper-engine.ts",
+    "./exchanges": "./src/exchanges.ts"
+  }
+}
