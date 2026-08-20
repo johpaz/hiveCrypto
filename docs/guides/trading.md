@@ -140,6 +140,8 @@ La lógica de trading vive una única vez, en `packages/mcp-trading/src/handlers
 
 El motivo es concreto: si cada superficie tuviera su copia, el cálculo de un fill o de un guardrail podría divergir entre lo que reporta el agente en el chat y lo que muestra la pantalla. En un producto de trading eso no es aceptable.
 
+`trading_focus` es la única excepción y a propósito: no es lógica de trading sino una directiva para la pantalla, así que no comparte handler y tampoco se expone por el servidor MCP — un cliente externo no tiene pantalla de hiveCrypto que enfocar.
+
 ## La pantalla
 
 `/trading` tiene cinco pestañas:
@@ -149,6 +151,32 @@ El motivo es concreto: si cada superficie tuviera su copia, el cálculo de un fi
 - **Screener** — qué se está moviendo, ordenable por variación o volumen. Un clic lleva el símbolo al gráfico.
 - **Backtest** — parámetros, curva de equity y el veredicto contra comprar y mantener.
 - **Auditoría** — cada intento de orden con su resultado y, si fue rechazado, el guardrail que lo bloqueó.
+
+## La pantalla y el agente
+
+Se hablan en las dos direcciones.
+
+**De la pantalla al agente.** Cinco botones componen la frase con lo que la pantalla ya sabe
+—símbolo, temporalidad, importe— y la mandan al coordinador: *Analizar con el agente* en la
+cabecera, *Dimensionar* y *Delegar orden* en el formulario, *Interpretar* en el backtest y
+*Revisar exposición* en el portafolio. La respuesta llega en un panel lateral que es la misma
+conversación de `/chat`, no una aparte.
+
+La diferencia entre «Comprar simulado» y «Delegar orden» importa: el primero manda la orden tal
+cual, el segundo se la pasa al agente, que puede dimensionarla o avisarte de que la idea no tiene
+stop.
+
+**Del agente a la pantalla.** Al cerrar un análisis, el analista llama a `trading_focus` y la
+pantalla ofrece seguirlo, con los niveles que encontró marcados en el gráfico. **No cambia el par
+solo**: aparece un aviso «Seguir» y decides tú, salvo que lleves un rato sin tocar nada. Si el
+símbolo cambiara bajo el cursor, el botón de comprar quedaría apuntando a otro activo del que
+crees.
+
+Mientras trabaja, la cabecera muestra qué especialista está activo y en qué herramienta va.
+
+**En la conversación.** El agente puede dibujar un gráfico de velas dentro del chat con el
+componente A2UI `Chart`, que reusa el mismo `CandlestickChart` de la pantalla — un máximo de 150
+velas, porque el modelo de datos viaja entero por WebSocket en cada actualización.
 
 El gráfico es SVG propio, sin librería de charting: el bundle se sirve desde el gateway local, donde una dependencia de CDN no cargaría, y así el tema claro/oscuro sale de las variables CSS del producto.
 
