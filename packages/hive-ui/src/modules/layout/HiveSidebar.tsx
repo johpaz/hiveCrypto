@@ -19,8 +19,7 @@ import {
   Hexagon,
   ArrowUpCircle,
   MonitorCog,
-  type LucideProps,
-} from "lucide-react";
+  type LucideProps, CandlestickChart,} from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useCanvasStore } from "@/stores/canvasStore";
@@ -46,6 +45,7 @@ function Icon({ icon: IconComponent, ...props }: { icon: React.ComponentType<Luc
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Web Chat", url: "/chat", icon: MessageSquare },
+  { title: "Trading", url: "/trading", icon: CandlestickChart },
   { title: "HiveLive", url: "/voz", icon: AudioLines },
   { title: "Agentes", url: "/agents", icon: Bot },
   { title: "Canales", url: "/channels", icon: MessageSquare },

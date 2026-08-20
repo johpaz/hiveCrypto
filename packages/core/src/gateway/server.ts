@@ -58,6 +58,7 @@ import { handleGetAgents, handleCreateAgent, handleUpdateAgent, handleDeleteAgen
 import { handleGetProviders, handleCreateProvider, handleToggleProvider, handleUpdateProvider, handleSyncProviderModels, handleGetProviderAvailableModels, handleLoadHiveAgentsModel, handleGetHiveAgentsModelStatus } from "./routes/providers";
 import { handleGetUsers, handleCreateUser, handleUpdateUserSettings, handleGetUserChannels, handleLinkUserChannel } from "./routes/users";
 import { handleGetSkills, handleActivateSkill, handleUpdateSkill, handleDeleteSkill, handleCreateSkill } from "./routes/skills";
+import { handleTradingAction, handleTradingStatus } from "./routes/trading";
 import { handleGetA2UISurfaces, handleDeleteA2UISurface } from "./routes/a2ui";
 import { handleGetRuntimeStatus } from "./routes/runtime";
 import { handleGetEthics, handleActivateEthics, handleDeleteEthics } from "./routes/ethics";
@@ -1457,6 +1458,15 @@ export async function startGateway(
         // PUT /api/models/:id
         if (url.pathname.match(/^\/api\/models\/[^/]+$/) && req.method === "PUT") {
           return await handleUpdateModel(req, addCorsHeaders)
+        }
+
+        // ── Trading API ────────────────────────────────────────────────────
+        if (url.pathname === "/api/trading" && req.method === "POST") {
+          return await handleTradingAction(req, addCorsHeaders)
+        }
+
+        if (url.pathname === "/api/trading/status" && req.method === "GET") {
+          return await handleTradingStatus(req, addCorsHeaders)
         }
 
         // ── Skills API ─────────────────────────────────────────────────────
