@@ -108,6 +108,12 @@ COMPONENT PROPS (nombres oficiales del spec):
   List: children (con template path), direction ("vertical"|"horizontal"), align, weight
   Image: url, description, fit ("contain"|"cover"|"fill"|"none"|"scaleDown"), variant ("icon"|"avatar"|"smallFeature"|"mediumFeature"|"largeFeature"|"header")
   Divider: axis ("horizontal"|"vertical")
+  Chart: gráfico de velas cripto. candles (obligatorio, {path} a un array OHLCV de CCXT:
+    [[ts, open, high, low, close, volume], ...]), title (string), timeframe (string),
+    rsi ({path} a un array de números alineado con las velas — añade el sub-panel de RSI),
+    showVolume (boolean, por defecto true), weight.
+    Máximo 150 velas: el modelo de datos viaja entero en cada actualización.
+    Pide sólo la ventana que vas a comentar, no el histórico completo.
 
 ACTION FORMAT (oficial: con wrapper event):
   {event: {name: "action_name", context: {key: {path: "/data/key"}}}}

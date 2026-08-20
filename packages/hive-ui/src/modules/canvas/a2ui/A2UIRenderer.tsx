@@ -39,6 +39,7 @@ import { A2UITabs } from "./components/Tabs";
 import { A2UIModal } from "./components/Modal";
 import { A2UIVideo } from "./components/Video";
 import { A2UIAudioPlayer } from "./components/AudioPlayer";
+import { A2UIChart } from "./components/Chart";
 
 export interface A2UIRendererProps {
   surface: A2UISurface;
@@ -158,6 +159,7 @@ export function RenderComponent(ctx: RenderCtx): React.ReactNode {
     case "Modal": return <A2UIModal def={def} ctx={ctx} />;
     case "Video": return <A2UIVideo def={def} ctx={ctx} />;
     case "AudioPlayer": return <A2UIAudioPlayer def={def} ctx={ctx} />;
+    case "Chart": return <A2UIChart def={def} ctx={ctx} />;
     default:
       // Unknown component type — render as a subtle placeholder
       return (
