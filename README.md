@@ -11,23 +11,38 @@
   <img alt="PRs bienvenidos" src="https://img.shields.io/badge/PRs-bienvenidos-16a34a.svg">
 </p>
 
-# Hive 1.0
+# hiveCrypto 0.1
 
-**Tu propio equipo de agentes de IA, corriendo en tu computadora o tu servidor — no alquilado a una nube ajena.** Hive coordina un enjambre de agentes especializados (investigación, archivos, código, documentos de oficina, automatizaciones cron, APIs) que trabajan para vos desde WhatsApp, Telegram, Slack, Discord o el navegador, mientras los ves operar en vivo en un mapa 3D.
+**Tu propio equipo de agentes de IA para mercados cripto, corriendo en tu computadora — no alquilado a una nube ajena.** hiveCrypto analiza mercados, dimensiona el riesgo, opera en simulado contra el libro de órdenes real y valida estrategias sobre histórico, desde WhatsApp, Telegram, Slack, Discord o el navegador.
 
-La instalación son 2 comandos de terminal; de ahí en más un asistente visual configura todo — no hace falta tocar código para usarlo día a día. Si además programás, tenés un runtime local-first, multi-canal y open source completo para construir encima.
+> ### ⚠️ Ninguna operación mueve dinero real
+>
+> hiveCrypto tiene tres modos: `readonly`, `paper` y `testnet`. **No existe un modo de dinero real**: la ruta de ejecución contra una cuenta de producción no está apagada por una bandera, sencillamente no está escrita en el código. Las órdenes simuladas se llenan contra el libro de órdenes real para que el slippage sea representativo, pero nunca llegan al exchange.
+
+La instalación son 2 comandos de terminal; de ahí en más un asistente visual configura todo — no hace falta tocar código para usarlo día a día. Si además programas, tienes un runtime local-first, multi-canal y open source completo para construir encima.
+
+## 📈 El vertical de trading
+
+- **19 herramientas de mercado** — precio, velas, libro de órdenes, flujo de operaciones, funding y open interest sobre 100+ exchanges vía CCXT.
+- **Análisis técnico con suavizado de Wilder** — RSI, MACD, EMA, SMA, Bollinger, ATR y VWAP. Los valores coinciden con TradingView, no con una aproximación propia.
+- **Paper trading con slippage real** — el fill recorre los niveles del libro; una orden grande paga peor precio, igual que en el mercado.
+- **Backtesting honesto** — todo resultado se compara contra comprar y mantener y declara sus limitaciones junto al número, no en una nota al pie.
+- **Guardrails visibles** — notional máximo por orden, whitelist de símbolos y exchanges, y un log de auditoría que registra cada intento con su motivo de rechazo.
+- **Servidor MCP propio** — habla la revisión **2026-07-28** del protocolo (núcleo stateless, `server/discover`, resultados cacheables) y sirve además tráfico 2025 por compatibilidad. Utilizable desde Claude Code, Cursor o cualquier cliente MCP.
+
+La pantalla `/trading` reúne gráfico de velas con indicadores, portafolio simulado, screener de mercado, backtesting y auditoría.
 
 <p align="center">
   <img src="docs/assets/office3d-screenshot.jpg" alt="Oficina 3D de Hive mostrando el enjambre de agentes en vivo" width="100%">
 </p>
 <p align="center"><sub>La Oficina 3D en <code>/office</code>: cada hexágono es un agente real, en vivo, no una animación de marketing.</sub></p>
 
-Hive reemplaza el patrón de "un agente gigante con 80 herramientas cargadas de memoria" por un coordinador liviano que descubre capacidades bajo demanda, delega en un catálogo de agentes persistentes y evalúa el resultado antes de darlo por bueno. Cada delegación queda respaldada por criterios de aceptación, checks determinísticos y evidencia auditable (proof packets): no confíes en el LLM a ciegas, compruébalo.
+hiveCrypto reemplaza el patrón de "un agente gigante con todas las herramientas cargadas de memoria" por un coordinador liviano que descubre capacidades bajo demanda, delega en un catálogo de agentes persistentes y evalúa el resultado antes de darlo por bueno. Cada delegación queda respaldada por criterios de aceptación, checks determinísticos y evidencia auditable (proof packets): no confíes en el LLM a ciegas, compruébalo.
 
 ## ✨ Por qué Hive
 
 - **Catálogo persistente, no plantillas desechables.** 12 agentes especializados (analista de mercado, gestor de riesgo, operador simulado, investigador de estrategias, investigación web, navegador, archivos, ingeniería de software, Office, automatizaciones cron, APIs y A2UI) enrutan el trabajo según el objetivo. Para MCP, el coordinador pide autorización y crea especialistas persistentes por servidor.
-- **Carga mínima + descubrimiento bajo demanda.** Cada turno arranca con 7 herramientas esenciales; `search_knowledge` incorpora el resto (57 herramientas, 25 skills) solo cuando la tarea lo necesita.
+- **Carga mínima + descubrimiento bajo demanda.** Cada turno arranca con 7 herramientas esenciales; `search_knowledge` incorpora el resto (79 herramientas, 27 skills) solo cuando la tarea lo necesita.
 - **Aceptación explícita, no confianza ciega.** Cada entrega pasa por checks determinísticos y el juicio del coordinador antes de reportar éxito; si no cumple sus criterios, vuelve al mismo worker con feedback concreto (`task_revise`) sin repetir el trabajo desde cero.
 - **Ejecución durable.** Jobs, leases y reintentos con backoff sobreviven caídas y reinicios del gateway — nada se pierde a mitad de camino.
 - **Multi-canal de verdad.** Webchat, Telegram, Discord, Slack y WhatsApp corren sobre el mismo runtime y el mismo coordinador.
