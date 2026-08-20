@@ -9,10 +9,10 @@ export function Header() {
         <div className="flex items-center gap-2">
           <img
             src="/logocolor-dark.png"
-            alt="Hive"
+            alt="hiveCrypto"
             className="h-8 w-8 object-contain"
           />
-          <h1 className="text-sm font-semibold tracking-tight">Hive</h1>
+          <h1 className="text-sm font-semibold tracking-tight">hiveCrypto</h1>
         </div>
       </div>
       <div className="flex items-center gap-3">

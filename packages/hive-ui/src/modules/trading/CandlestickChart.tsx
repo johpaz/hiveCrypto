@@ -184,6 +184,32 @@ export function CandlestickChart({
   // Etiquetas del eje de precio: 5 marcas equiespaciadas.
   const priceTicks = Array.from({ length: 5 }, (_, i) => geom.lo + ((geom.hi - geom.lo) * i) / 4);
 
+  /**
+   * Qué niveles llevan etiqueta.
+   *
+   * Los pivotes se agrupan por cercanía de precio, pero dos clusters separados
+   * pueden seguir cayendo a pocos píxeles en pantalla y sus etiquetas se
+   * apilaban en un borrón ilegible. Aquí se reserva el espacio vertical: la
+   * línea se dibuja siempre, la etiqueta sólo si hay hueco.
+   */
+  const labelled = (() => {
+    const MIN_GAP = 11;
+    const taken: number[] = [];
+    const fits = (price: number) => {
+      const y = geom.y(price);
+      if (taken.some(t => Math.abs(t - y) < MIN_GAP)) return false;
+      taken.push(y);
+      return true;
+    };
+    // Se resuelve en un solo paso sobre ambos lados para que un soporte y una
+    // resistencia próximos tampoco choquen entre sí.
+    const sup = new Set<number>();
+    const res = new Set<number>();
+    for (const l of support.slice(0, 3)) if (fits(l.price)) sup.add(l.price);
+    for (const l of resistance.slice(0, 3)) if (fits(l.price)) res.add(l.price);
+    return { sup, res };
+  })();
+
   return (
     <div className={cn("relative w-full", className)}>
       <svg
@@ -219,9 +245,11 @@ export function CandlestickChart({
               x1={PAD.left} x2={W - PAD.right} y1={geom.y(l.price)} y2={geom.y(l.price)}
               stroke={UP} strokeOpacity={0.45} strokeWidth={1} strokeDasharray="5 4"
             />
-            <text x={PAD.left + 3} y={geom.y(l.price) - 3} fontSize={8} fill={UP} fillOpacity={0.85}>
-              S {fmtPrice(l.price)}
-            </text>
+            {labelled.sup.has(l.price) && (
+              <text x={PAD.left + 3} y={geom.y(l.price) - 3} fontSize={8} fill={UP} fillOpacity={0.85}>
+                S {fmtPrice(l.price)}
+              </text>
+            )}
           </g>
         ))}
         {resistance.slice(0, 3).map((l, i) => (
@@ -230,9 +258,11 @@ export function CandlestickChart({
               x1={PAD.left} x2={W - PAD.right} y1={geom.y(l.price)} y2={geom.y(l.price)}
               stroke={DOWN} strokeOpacity={0.45} strokeWidth={1} strokeDasharray="5 4"
             />
-            <text x={PAD.left + 3} y={geom.y(l.price) - 3} fontSize={8} fill={DOWN} fillOpacity={0.85}>
-              R {fmtPrice(l.price)}
-            </text>
+            {labelled.res.has(l.price) && (
+              <text x={PAD.left + 3} y={geom.y(l.price) - 3} fontSize={8} fill={DOWN} fillOpacity={0.85}>
+                R {fmtPrice(l.price)}
+              </text>
+            )}
           </g>
         ))}
 
