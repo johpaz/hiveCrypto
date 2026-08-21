@@ -31,8 +31,8 @@ describe("transportes del cliente MCP", () => {
   });
 
   test("los transportes legacy siguen construyéndose", () => {
-    // Composio y compañía están configurados como "sse": si esto deja de
-    // construir, esas integraciones dejan de conectar.
+    // Hay servidores ya configurados como "sse": si esto deja de construir,
+    // esas integraciones dejan de conectar.
     expect(createTransport({ type: "sse", sse: { url: "http://localhost:1/mcp" } })).toBeTruthy();
     expect(createTransport({ type: "websocket", websocket: { url: "ws://localhost:1" } })).toBeTruthy();
   });
