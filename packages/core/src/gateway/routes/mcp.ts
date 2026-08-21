@@ -20,7 +20,7 @@ export async function handleGetMcpServers(
   mcpManager?: any
 ): Promise<Response> {
   // Get real-time server status from MCP manager
-  const mcpServers = new Map<string, { status: string; tools: any[] }>()
+  const mcpServers = new Map<string, { status: string; tools: any[]; protocolEra?: string }>()
   if (mcpManager) {
     try {
       const servers = mcpManager.listServers?.() || []
@@ -29,6 +29,8 @@ export async function handleGetMcpServers(
         mcpServers.set(s.name, {
           status: s.status,
           tools: s.tools || [],
+          // Resultado de la negociación de era; sólo existe estando conectado.
+          protocolEra: s.protocolEra,
         })
       }
     } catch (e) {
@@ -77,6 +79,7 @@ export async function handleGetMcpServers(
         headers,
         enabled: isEnabled
       },
+      protocolEra: mcpServer?.protocolEra,
       tools_count: mcpServer?.tools.length || s.tools_count || 0,
       tools: mcpServer?.tools || [],
     }

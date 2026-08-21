@@ -14,6 +14,8 @@ interface MCPServerCardProps {
     url?: string;
     tools?: any[];
     tools_count?: number;
+    /** Revisión negociada al conectar: "modern" = 2026-07-28, "legacy" = era 2025. */
+    protocolEra?: string;
   };
   onClick?: () => void;
   isConnected?: boolean;
@@ -69,6 +71,24 @@ export function MCPServerCard({ server, onClick, isConnected, isLoading }: MCPSe
             <span className="text-[9px] text-zinc-500 uppercase font-bold tracking-widest">Transport</span>
             <span className="text-xs font-semibold text-zinc-300">{server.transport}</span>
           </div>
+          {/* La era sale de la negociación, no de la config, así que sólo hay
+              algo que mostrar mientras el servidor está conectado. */}
+          {connectionStatus && server.protocolEra && (
+            <>
+              <div className="h-4 w-px bg-white/10" />
+              <div className="flex flex-col">
+                <span className="text-[9px] text-zinc-500 uppercase font-bold tracking-widest">Protocolo</span>
+                <span
+                  className={`text-xs font-semibold ${server.protocolEra === "modern" ? "text-emerald-400" : "text-zinc-400"}`}
+                  title={server.protocolEra === "modern"
+                    ? "Revisión 2026-07-28: sin sesiones, sin handshake"
+                    : "Era 2025: handshake initialize y sesión"}
+                >
+                  {server.protocolEra === "modern" ? "2026-07-28" : "2025"}
+                </span>
+              </div>
+            </>
+          )}
           <div className="h-4 w-px bg-white/10" />
           <div className="flex flex-col">
             <span className="text-[9px] text-zinc-500 uppercase font-bold tracking-widest">Tools</span>

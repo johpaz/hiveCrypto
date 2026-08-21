@@ -32,5 +32,7 @@ export interface MCPServer {
   lastPing?: string;
   addedAt?: string;
   transport?: string;
+  /** Revisión del protocolo negociada al conectar: "modern" (2026-07-28) o "legacy" (2025). */
+  protocolEra?: string;
   builtin?: boolean;
 }

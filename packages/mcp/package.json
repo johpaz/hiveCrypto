@@ -12,8 +12,8 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.26.0",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "@modelcontextprotocol/client": "^2.0.0"
   },
   "devDependencies": {
     "typescript": "7.0.2",

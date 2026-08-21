@@ -1,5 +1,6 @@
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
+import type { Transport } from "@modelcontextprotocol/client";
 
 // CORRECCIÓN 1 — quitar extensión .ts de los imports
 // Bun resuelve los módulos sin extensión correctamente
@@ -18,11 +19,30 @@ export interface StdioTransportConfig {
   env?: Record<string, string>;
 }
 
-export type TransportType = "stdio" | "sse" | "websocket";
+/**
+ * Transportes soportados.
+ *
+ * `stdio` y `http` son los dos que la revisión 2026-07-28 reconoce. Los otros
+ * dos siguen aquí por compatibilidad y no deberían elegirse para un servidor
+ * nuevo:
+ *
+ *  - `sse`: HTTP+SSE quedó **deprecado** en la spec. Nuestra implementación a
+ *    mano cae al patrón Streamable HTTP ante un 4xx, así que muchos servidores
+ *    "sse" configurados en realidad ya hablan HTTP moderno — migrarlos a `http`
+ *    es un cambio de una palabra en la config.
+ *  - `websocket`: nunca formó parte de la especificación.
+ */
+export type TransportType = "stdio" | "http" | "sse" | "websocket";
+
+export interface HttpTransportConfig {
+  url: string;
+  headers?: Record<string, string>;
+}
 
 export interface TransportOptions {
   type: TransportType;
   stdio?: StdioTransportConfig;
+  http?: HttpTransportConfig;
   sse?: SSETransportConfig;
   websocket?: WebSocketTransportConfig;
 }
@@ -37,6 +57,17 @@ export function createTransport(options: TransportOptions): Transport {
         command: options.stdio.command,
         args: options.stdio.args ?? [],
         env: options.stdio.env ?? (process.env as Record<string, string>),
+      });
+    }
+
+    case "http": {
+      if (!options.http) {
+        throw new Error("http config required for Streamable HTTP transport");
+      }
+      // El transporte del SDK: sin session-id propio, sin reanudación a mano.
+      // La negociación de era la hace el Client, no el transporte.
+      return new StreamableHTTPClientTransport(new URL(options.http.url), {
+        requestInit: options.http.headers ? { headers: options.http.headers } : undefined,
       });
     }
 

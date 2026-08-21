@@ -1,5 +1,5 @@
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
+import { Client } from "@modelcontextprotocol/client";
+import type { Transport, ProtocolEra } from "@modelcontextprotocol/client";
 import type { MCPConfig, MCPServerConfig } from "./config";
 import { logger, type LogHandler } from "./logger";
 import * as path from "node:path";
@@ -42,6 +42,13 @@ interface MCPServerState {
   resources: MCPResource[];
   prompts: MCPPrompt[];
   reconnectAttempts: number;
+  /**
+   * Revisión del protocolo que se acabó hablando con este servidor.
+   * `modern` = 2026-07-28 (stateless, sin `initialize`); `legacy` = era 2025.
+   * Queda en el estado para poder mostrarlo en la UI y para decidir si tiene
+   * sentido reintentar por sesión caída.
+   */
+  protocolEra?: ProtocolEra;
   lastError?: string;  // CORRECCIÓN 3 — guardar el mensaje de error
 }
 
@@ -167,6 +174,15 @@ export class MCPClientManager {
         return createTransport({ type: "stdio", stdio: { command, args, env } });
       }
 
+      case "http": {
+        const url = state.config.url;
+        if (!url) throw new Error("El transporte http requiere 'url' en la configuración");
+        return createTransport({
+          type: "http",
+          http: { url, headers: state.config.headers },
+        });
+      }
+
       case "sse": {
         const url = state.config.url;
         if (!url) throw new Error("SSE transport requires 'url' config");
@@ -200,11 +216,28 @@ export class MCPClientManager {
     this.log.info(`Connecting to MCP server: ${name}`);
 
     try {
+      const transportType = state.config.transport as TransportType;
       const transport = this.createTransportForServer(state);
 
+      // Sólo se negocia era sobre los transportes que la revisión 2026-07-28
+      // reconoce. Sondear por `sse` o `websocket` no tendría sentido y además
+      // rompe: nuestro SSE a mano cae al patrón Streamable HTTP sin mandar las
+      // cabeceras `Mcp-Method`/`Mcp-Name` que la spec exige, así que un
+      // servidor moderno rechaza el sondeo con `-32020` (HeaderMismatch) y la
+      // conexión entera se cae. Un transporte deprecado se queda en su era; a
+      // un servidor moderno se llega con `http`.
+      const negotiates = transportType === "stdio" || transportType === "http";
+
       const client = new Client(
-        { name: "hive", version: "0.1.0" },
-        { capabilities: {} }
+        { name: "hivecrypto", version: "0.1.0" },
+        {
+          capabilities: {},
+          // `auto` sondea con `server/discover` al conectar y cae al handshake
+          // `initialize` de la era 2025 si no hay evidencia concluyente de que
+          // el servidor sea moderno. Es lo que permite migrar sin tocar la
+          // configuración de los servidores ya existentes.
+          versionNegotiation: { mode: negotiates ? "auto" : "legacy" },
+        }
       );
 
       await client.connect(transport);
@@ -213,10 +246,11 @@ export class MCPClientManager {
       state.transport = transport;
       state.status = "connected";
       state.reconnectAttempts = 0;
+      state.protocolEra = client.getProtocolEra();
 
       await this.discoverCapabilities(name);
 
-      this.log.info(`Connected to MCP server: ${name}`, {
+      this.log.info(`Connected to MCP server: ${name} (${state.protocolEra ?? "era desconocida"})`, {
         tools: state.tools.length,
         resources: state.resources.length,
         prompts: state.prompts.length,
@@ -305,10 +339,12 @@ export class MCPClientManager {
       const result = await state.client.callTool({ name: toolName, arguments: args });
       return result.content;
     } catch (error) {
-      // The remote server dropped/expired the session (SSE/Streamable HTTP transports
-      // hold sessionId client-side with no expiry signal — a server restart or timeout
-      // invalidates it silently). Reconnect this one server (fresh Client + Transport,
-      // re-runs the MCP initialize handshake to get a new session) and retry once.
+      // Reintento por sesión caída: sólo tiene sentido en la era 2025, donde el
+      // sessionId vive en el cliente sin señal de expiración y un reinicio del
+      // servidor lo invalida en silencio. La revisión 2026-07-28 eliminó las
+      // sesiones del protocolo, así que ahí un fallo es un fallo real y
+      // reconectar sólo escondería el motivo.
+      if (state.protocolEra === "modern") throw error;
       if (!this.isSessionError(error)) throw error;
 
       this.log.warn(`MCP tool call ${serverName}/${toolName} failed with a stale session — reconnecting and retrying once: ${(error as Error).message}`);
@@ -372,6 +408,8 @@ export class MCPClientManager {
     prompts: MCPPrompt[];
     url?: string;
     error?: string;
+    transport?: string;
+    protocolEra?: ProtocolEra;
   }> {
     return Array.from(this.servers.values()).map((s) => ({
       name: s.name,
@@ -381,6 +419,10 @@ export class MCPClientManager {
       prompts: s.prompts,
       url: s.config.transport === "stdio" ? `${s.config.command} ${s.config.args?.join(" ")}` : s.config.url,
       error: s.lastError,
+      transport: s.config.transport,
+      // Sólo tiene valor mientras está conectado: es el resultado de la
+      // negociación, no una preferencia de la configuración.
+      protocolEra: s.protocolEra,
     }));
   }
 
