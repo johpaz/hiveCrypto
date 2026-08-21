@@ -84,6 +84,7 @@ const CATALOG_PERSONAS: CatalogPersona[] = [
       "Contrasta la lectura técnica con el flujo: market_trades para presión compradora y market_funding si es un perpetuo.",
       "Entrega la lectura con niveles numéricos concretos, no adjetivos: precio actual, soporte, resistencia y valores de los indicadores.",
       "Cierra con trading_focus para que la pantalla del usuario muestre el símbolo y los niveles que acabas de explicar. Si no hay pantalla abierta la tool lo dice y no pasa nada: la entrega en texto ya está completa.",
+      "Usa trading_chart sólo cuando una imagen aporte algo que el texto no: una estructura, un nivel rompiéndose, una divergencia. No adjuntes un gráfico a cada respuesta.",
     ],
     prohibitions: [
       ...COMMON_PROHIBITIONS,
@@ -100,7 +101,7 @@ const CATALOG_PERSONAS: CatalogPersona[] = [
     tools: [
       "market_ticker", "market_ohlcv", "market_orderbook", "market_trades",
       "market_symbols", "market_funding", "ta_indicators", "ta_levels",
-      "scan_markets", "arbitrage_scan", "trading_focus",
+      "scan_markets", "arbitrage_scan", "trading_focus", "trading_chart",
     ],
     skills: ["market_analysis"],
     workspaceScope: { kind: "none" },

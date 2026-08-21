@@ -466,6 +466,100 @@ export function createTools(): Tool[] {
       },
     },
 
+    {
+      name: "trading_chart",
+      description:
+        "Dibuja un gráfico de velas en el Panel interactivo del usuario, opcionalmente con RSI. " +
+        "Úsala cuando una imagen explique mejor que un párrafo: estructura, un nivel que se rompe, " +
+        "una divergencia. El usuario recibe un aviso y lo abre desde la barra lateral. " +
+        "Spanish: dibuja el gráfico, muéstrame las velas, gráfica de, ver el chart",
+      parameters: {
+        type: "object",
+        properties: {
+          symbol: symbolParam,
+          timeframe: {
+            type: "string",
+            description: "Temporalidad de las velas. Por defecto 4h.",
+            enum: ["15m", "1h", "4h", "1d"],
+          },
+          candles: {
+            type: "number",
+            description: "Velas a mostrar (30-150). Por defecto 120. Pide la ventana que vas a comentar.",
+            minimum: 30,
+            maximum: 150,
+          },
+          withRsi: { type: "boolean", description: "Añadir el sub-panel de RSI. Por defecto true." },
+          title: { type: "string", description: "Título del gráfico. Por defecto el símbolo y la temporalidad." },
+        },
+        required: ["symbol"],
+      },
+      execute: async (p, config) => {
+        const userId = config?.configurable?.user_id;
+        if (!userId) return { ok: false, error: "No hay sesión de usuario para dibujar el gráfico" };
+        const sessionId = `canvas:${userId}`;
+
+        // Igual que trading_focus: sin superficie donde dibujar no es un error.
+        if (!canvasManager.isSessionConnected(sessionId)) {
+          return {
+            ok: true,
+            delivered: false,
+            note: "No hay una sesión visual abierta; el análisis se entrega sólo en texto.",
+          };
+        }
+
+        const symbol = str(p.symbol);
+        const timeframe = str(p.timeframe, "4h");
+        const limit = Math.max(30, Math.min(150, num(p.candles, 120)));
+        const withRsi = bool(p.withRsi, true);
+        const ctxNow = ctx();
+
+        // Los datos los trae la tool, no el modelo: así el gráfico no depende
+        // de que el LLM copie bien un array de 120 velas en el modelo de datos.
+        const ohlcv = await handlers.marketOhlcv(ctxNow, {
+          symbol, timeframe, limit, exchange: ex(p),
+        });
+
+        let rsi: (number | null)[] | undefined;
+        if (withRsi) {
+          const ind = await handlers.taIndicators(ctxNow, {
+            symbol, timeframe, indicators: ["rsi"], limit,
+            emaPeriods: [], rsiPeriod: 14, exchange: ex(p), includeSeries: true,
+          });
+          rsi = (ind.series as { rsi?: (number | null)[] } | undefined)?.rsi;
+        }
+
+        const surfaceId = `trading-chart-${symbol.replace(/[^A-Za-z0-9]/g, "-")}-${timeframe}`;
+        const title = str(p.title, `${symbol} · ${timeframe}`);
+
+        await canvasManager.sendA2UIMessage(sessionId, "a2ui:createSurface", {
+          surfaceId, catalogId: "basic", theme: {}, sendDataModel: false,
+        });
+        await canvasManager.sendA2UIMessage(sessionId, "a2ui:updateDataModel", {
+          surfaceId,
+          value: { chart: { candles: ohlcv.candles, ...(rsi ? { rsi } : {}) } },
+        });
+        await canvasManager.sendA2UIMessage(sessionId, "a2ui:updateComponents", {
+          surfaceId,
+          components: [
+            {
+              id: "root",
+              component: "Chart",
+              title,
+              timeframe,
+              candles: { path: "/chart/candles" },
+              ...(rsi ? { rsi: { path: "/chart/rsi" } } : {}),
+            },
+          ],
+        });
+
+        return {
+          ok: true, delivered: true, surfaceId, symbol, timeframe,
+          candles: ohlcv.candles.length,
+          note: "El gráfico está en el Panel interactivo del usuario.",
+        };
+      },
+    },
+
     // ── BACKTESTING ──────────────────────────────────────────────────────
     {
       name: "backtest_run",

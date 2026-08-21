@@ -8,7 +8,7 @@ category: trading
 permissions:
   - internet_access
 dependencies: []
-tools: [market_symbols, market_ticker, market_ohlcv, ta_indicators, ta_levels, market_trades, market_funding, trading_focus]
+tools: [market_symbols, market_ticker, market_ohlcv, ta_indicators, ta_levels, market_trades, market_funding, trading_focus, trading_chart]
 
 triggers:
   - "analiza"
@@ -82,3 +82,4 @@ Entrega una lectura del mercado que sirva para tomar una decisión, no un resume
 - Nunca presentes la lectura como una predicción. El análisis describe el estado actual y sus escenarios, no el futuro.
 - Si los indicadores se contradicen entre sí, dilo: es información, no un problema a esconder.
 - Termina enfocando la pantalla en lo que explicaste. El usuario no debería tener que buscar a mano el símbolo del que le acabas de hablar.
+- Si la lectura se apoya en algo visual —una estructura, un nivel que se rompe, una divergencia— dibuja el gráfico con `trading_chart`. Aparece en el Panel interactivo, no en el chat. No lo adjuntes a cada respuesta: un gráfico que no añade nada es ruido.

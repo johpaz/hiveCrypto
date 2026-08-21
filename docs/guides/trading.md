@@ -174,9 +174,15 @@ crees.
 
 Mientras trabaja, la cabecera muestra qué especialista está activo y en qué herramienta va.
 
-**En la conversación.** El agente puede dibujar un gráfico de velas dentro del chat con el
-componente A2UI `Chart`, que reusa el mismo `CandlestickChart` de la pantalla — un máximo de 150
-velas, porque el modelo de datos viaja entero por WebSocket en cada actualización.
+**En el Panel interactivo.** Con `trading_chart` el agente dibuja un gráfico de velas —con RSI si
+lo pide— usando el componente A2UI `Chart`, que reusa el mismo `CandlestickChart` de la pantalla.
+Aparece en **`/a2ui`**, no dentro del chat: las superficies A2UI se renderizan ahí y el usuario
+recibe un aviso en la barra lateral. Máximo 150 velas, porque el modelo de datos viaja entero por
+WebSocket en cada actualización.
+
+Los datos los trae la tool, no el modelo: el agente pide «dibuja BTC en 4h» y la tool resuelve las
+velas y el RSI por dentro. Si dependiera de que el LLM copie 120 velas en el modelo de datos, el
+gráfico saldría mal cada tanto.
 
 El gráfico es SVG propio, sin librería de charting: el bundle se sirve desde el gateway local, donde una dependencia de CDN no cargaría, y así el tema claro/oscuro sale de las variables CSS del producto.
 

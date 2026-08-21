@@ -25,7 +25,7 @@ const TRADING_TOOLS = [
   "scan_markets", "arbitrage_scan", "paper_account", "paper_order",
   "paper_positions", "paper_close", "paper_history",
   "exchange_balance", "exchange_order", "exchange_orders", "backtest_run",
-  "trading_focus",
+  "trading_focus", "trading_chart",
 ];
 
 const CRYPTO_AGENTS = ["market_analyst", "risk_manager", "paper_trader", "strategy_researcher"];
@@ -34,7 +34,7 @@ describe("tools nativas de trading", () => {
   const tools = createTools();
   const names = tools.map(t => t.name);
 
-  test("expone exactamente las 20 operaciones", () => {
+  test("expone exactamente las 21 operaciones", () => {
     expect(names.sort()).toEqual([...TRADING_TOOLS].sort());
   });
 
@@ -46,7 +46,7 @@ describe("tools nativas de trading", () => {
     // directiva para la pantalla del usuario, así que no comparte handler y
     // tampoco se expone por el servidor MCP (un cliente externo no tiene
     // pantalla de hiveCrypto que enfocar).
-    const withHandler = TRADING_TOOLS.filter(t => t !== "trading_focus");
+    const withHandler = TRADING_TOOLS.filter(t => t !== "trading_focus" && t !== "trading_chart");
     expect(Object.keys(handlers).length).toBeGreaterThanOrEqual(withHandler.length);
   });
 
@@ -131,9 +131,11 @@ describe("agentes especialistas", () => {
     // Dirigir la pantalla es inocuo, pero conviene fijar que la tool no se
     // coló en el allowlist de quien sí puede ejecutar.
     expect(toolsOf("market_analyst")).toContain("trading_focus");
+    expect(toolsOf("market_analyst")).toContain("trading_chart");
     expect(toolsOf("market_analyst")).not.toContain("paper_order");
     for (const id of ["risk_manager", "paper_trader", "strategy_researcher"]) {
       expect(toolsOf(id)).not.toContain("trading_focus");
+      expect(toolsOf(id)).not.toContain("trading_chart");
     }
   });
 
