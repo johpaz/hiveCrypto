@@ -80,7 +80,12 @@ export function AgentPanel({ open, onOpenChange }: Props) {
           </Button>
         </header>
 
-        <div className="min-h-0 flex-1">
+        {/* Contenedor flex, no un div suelto: ChatHistory lleva `flex-1` en su
+            raíz y necesita un padre flex para que la cadena de altura llegue
+            hasta su `overflow-y-auto`. Sin esto el área de mensajes no queda
+            acotada, no aparece scroll y una conversación larga empuja el campo
+            de escritura fuera de la pantalla. */}
+        <div className="flex min-h-0 flex-1 flex-col">
           <ChatHistory
             messages={messages}
             isLoading={isLoading}
