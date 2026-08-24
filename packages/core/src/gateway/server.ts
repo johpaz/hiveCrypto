@@ -2256,6 +2256,13 @@ export async function startGateway(
           return;
         }
 
+        // El cliente contesta `pong` al keepalive que el servidor manda cada
+        // 30 s. Es sólo señal de vida — `sessionManager.touch()` ya corrió
+        // arriba — así que aquí no hay nada que hacer. Sin esta rama el pong
+        // caía hasta el final del handler y el gateway devolvía
+        // "Unknown message type", que el chat pintaba como burbuja de error.
+        if (msg.type === "pong") return;
+
         if (msg.type === "notification_sync") {
           const pending = await listPendingNotifications(data.sessionId, "webchat");
           for (const notification of pending) {
