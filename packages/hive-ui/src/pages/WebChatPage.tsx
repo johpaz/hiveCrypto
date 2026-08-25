@@ -19,7 +19,12 @@ export function WebChatPage() {
   // Las suscripciones, el historial y el aviso de conexión los monta
   // useAgentChatBridge() en AppLayout — aquí sólo se lee y se envía.
   const { messages, currentSteps, streamingMessageId, connectionWarning } = useChatStore();
-  const { status } = useWebSocket();
+  // `send` es el canal crudo, para el botón de detener; el envío normal va por
+  // useAgentChat. `currentUser` lo usan el nombre en el historial y el botón de
+  // reintentar la conexión: los dos se perdieron en un refactor y el archivo
+  // quedó llamando a nombres que ya no existían.
+  const { status, send } = useWebSocket();
+  const { currentUser } = useUserStore();
   const agents = useGlobalConfigStore((s) => s.agents);
   const fetchAgents = useGlobalConfigStore((s) => s.fetchAgents);
   const { send: sendToAgent, isLoading, sessionId } = useAgentChat();

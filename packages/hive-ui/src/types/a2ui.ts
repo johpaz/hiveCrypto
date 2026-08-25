@@ -126,6 +126,13 @@ export interface ComponentDef {
   enableDate?: boolean;
   enableTime?: boolean;
 
+  // Gráfico de velas: propio de esta vertical. Declararlo aquí, y no dejarlo
+  // caer en el índice genérico, es lo que permite que el compilador compruebe
+  // que el título se resuelve como cualquier otro texto dinámico.
+  title?: DynamicString;
+  candles?: unknown;
+  rsi?: unknown;
+
   [key: string]: unknown;
 }
 

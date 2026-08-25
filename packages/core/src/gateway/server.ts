@@ -2296,6 +2296,15 @@ export async function startGateway(
           return;
         }
 
+        // Latido del lienzo: la prueba de que esa ventana sigue ahí. Sin esto,
+        // un cliente que se fue sin avisar —máquina suspendida, red caída—
+        // seguiría recibiendo superficies que no va a pintar nadie.
+        if (msg.type === "canvas:pong") {
+          const connId = (msg.connId ?? (msg.data as any)?.connId) as string | undefined;
+          if (connId) canvasManager.markAlive(connId);
+          return;
+        }
+
         // Canvas unsubscribe
         if (msg.type === "canvas_unsubscribe") {
           unsubscribeCanvas(ws);

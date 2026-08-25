@@ -60,7 +60,12 @@ export interface ToolDescriptor {
     description: string
     category: string
     /** Abstraction level: atomic (single operation) vs orchestration (manages multiple) */
-    abstractionLevel?: "atomic" | "orchestration"
+    /**
+     * Cuánto abarca una herramienta: "atomic" es una sola operación,
+     * "composite" una sola llamada que barre muchas cosas —rastrear todos los
+     * mercados, comparar casas de cambio— y "orchestration" coordina a otras.
+     */
+    abstractionLevel?: "atomic" | "composite" | "orchestration"
 }
 
 export interface SelectedTool {
@@ -117,7 +122,7 @@ const CONVERSATIONAL_PATTERNS = [
 // - name: unique identifier
 // - description: what the tool does (used for BM25 matching)
 // - category: semantic domain for grouping
-// - abstractionLevel: atomic (single operation) vs orchestration (manages multiple)
+// - abstractionLevel: atomic (single operation), composite (one call that sweeps many) or orchestration (manages multiple)
 //
 // The descriptions are enriched with Spanish/English keywords for better BM25 matching.
 
@@ -400,11 +405,17 @@ export async function selectTools(
             const aLevel = aTool?.abstractionLevel ?? "atomic"
             const bLevel = bTool?.abstractionLevel ?? "atomic"
 
-            if (abstractionPref === "atomic") {
-                return (aLevel === "atomic" ? -1 : 1)
-            } else {
-                return (aLevel === "orchestration" ? -1 : 1)
-            }
+            // Un escalón por nivel, en vez de "atómica o lo que sea": así una
+            // compuesta queda por delante de una orquestación cuando se
+            // prefiere lo simple, que es justo el orden que se pretendía.
+            //
+            // Devolver 0 en el empate tampoco es cosmético: la versión anterior
+            // contestaba -1 en los dos sentidos de la comparación, y con eso el
+            // criterio de orden se contradice a sí mismo y el resultado depende
+            // del algoritmo que use el motor.
+            const rango = (nivel: string) => (nivel === "atomic" ? 0 : nivel === "composite" ? 1 : 2)
+            const diferencia = rango(aLevel) - rango(bLevel)
+            return abstractionPref === "atomic" ? diferencia : -diferencia
         })
     }
 
