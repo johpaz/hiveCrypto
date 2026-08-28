@@ -1,8 +1,8 @@
-app-id: io.hiveagents.desktop
+app-id: io.hivecrypto.desktop
 runtime: org.gnome.Platform
 runtime-version: '49'
 sdk: org.gnome.Sdk
-command: hive
+command: hivecrypto
 finish-args:
   - --share=network
   - --socket=x11
@@ -13,22 +13,24 @@ finish-args:
   - --talk-name=org.freedesktop.Notifications
   - --talk-name=org.kde.StatusNotifierWatcher
 modules:
-  - name: hive-desktop
+  - name: hivecrypto-desktop
     buildsystem: simple
     build-commands:
-      - install -Dm755 hive-desktop /app/bin/hive
+      - install -Dm755 hivecrypto-desktop /app/bin/hivecrypto
       - install -Dm755 hive-gateway /app/bin/hive-gateway
-      - install -Dm644 io.hiveagents.desktop.desktop /app/share/applications/io.hiveagents.desktop.desktop
-      - install -Dm644 hive.png /app/share/icons/hicolor/512x512/apps/io.hiveagents.desktop.png
+      - install -Dm644 io.hivecrypto.desktop.desktop /app/share/applications/io.hivecrypto.desktop.desktop
+      - install -Dm644 hivecrypto.png /app/share/icons/hicolor/512x512/apps/io.hivecrypto.desktop.png
     sources:
+      # El binario de Tauri se llama como el paquete de Cargo (hivecrypto-desktop),
+      # no como productName.
       - type: file
-        path: ../src-tauri/target/release/hive-desktop
-        dest-filename: hive-desktop
+        path: ../src-tauri/target/release/hivecrypto-desktop
+        dest-filename: hivecrypto-desktop
       - type: file
         path: ../src-tauri/binaries/hive-gateway-x86_64-unknown-linux-gnu
         dest-filename: hive-gateway
       - type: file
-        path: io.hiveagents.desktop.desktop
+        path: io.hivecrypto.desktop.desktop
       - type: file
         path: ../src-tauri/icons/icon.png
-        dest-filename: hive.png
+        dest-filename: hivecrypto.png

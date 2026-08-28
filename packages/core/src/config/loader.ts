@@ -405,7 +405,7 @@ function buildDefaultConfig(): Config {
   return {
     gateway: {
       host: process.env.HIVE_HOST || "127.0.0.1",
-      port: parseInt(process.env.HIVE_PORT || "18790", 10),
+      port: parseInt(process.env.HIVE_PORT || "18791", 10),
       pidFile: path.join(hiveDir, "gateway.pid"),
       authToken: process.env.HIVE_AUTH_TOKEN || undefined,
       tools: {

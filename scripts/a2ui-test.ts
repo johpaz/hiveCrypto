@@ -8,7 +8,7 @@
  */
 
 const HOST = process.env.HIVE_GATEWAY_HOST ?? "127.0.0.1";
-const PORT = process.env.HIVE_GATEWAY_PORT ?? "18790";
+const PORT = process.env.HIVE_GATEWAY_PORT ?? "18791";
 const AUTH_TOKEN = process.env.HIVE_AUTH_TOKEN ?? "";
 
 const sessionId = process.argv[2] ?? "default";

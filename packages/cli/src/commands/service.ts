@@ -13,14 +13,14 @@ export async function installService(): Promise<void> {
   }
 
   const serviceContent = `[Unit]
-Description=Hive Personal AI Gateway
+Description=hiveCrypto Personal AI Gateway
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=${HOME}/.bun/bin/hive start
-ExecStop=${HOME}/.bun/bin/hive stop
+ExecStart=${HOME}/.bun/bin/hivecrypto start
+ExecStop=${HOME}/.bun/bin/hivecrypto stop
 Restart=on-failure
 RestartSec=5
 Environment=PATH=${HOME}/.bun/bin:${HOME}/.npm-global/bin:/usr/local/bin:/usr/bin:/bin
@@ -30,7 +30,7 @@ WorkingDirectory=${HOME}
 WantedBy=default.target
 `;
 
-  const servicePath = path.join(SYSTEMD_DIR, "hive.service");
+  const servicePath = path.join(SYSTEMD_DIR, "hivecrypto.service");
 
   fs.writeFileSync(servicePath, serviceContent, "utf-8");
   console.log(`✅ Archivo de servicio creado: ${servicePath}\n`);
@@ -39,12 +39,12 @@ WantedBy=default.target
   execSync("systemctl --user daemon-reload", { stdio: "inherit" });
 
   console.log("Habilitando servicio...");
-  execSync("systemctl --user enable hive", { stdio: "inherit" });
+  execSync("systemctl --user enable hivecrypto", { stdio: "inherit" });
 
   console.log("\n✅ Servicio instalado correctamente.\n");
   console.log("Comandos disponibles:");
-  console.log("  systemctl --user start hive    # Iniciar");
-  console.log("  systemctl --user stop hive     # Detener");
-  console.log("  systemctl --user status hive   # Ver estado");
+  console.log("  systemctl --user start hivecrypto    # Iniciar");
+  console.log("  systemctl --user stop hivecrypto     # Detener");
+  console.log("  systemctl --user status hivecrypto   # Ver estado");
   console.log("  journalctl --user -u hive -f   # Ver logs");
 }

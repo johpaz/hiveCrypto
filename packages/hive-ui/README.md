@@ -11,7 +11,7 @@ bun install
 bun --cwd=packages/hive-ui run dev
 ```
 
-Vite escucha en `5173` y redirige `/api`, `/health`, `/status` y `/ws` al gateway en `127.0.0.1:18790`.
+Vite escucha en `5173` y redirige `/api`, `/health`, `/status` y `/ws` al gateway en `127.0.0.1:18791`.
 
 Para usar datos reales, inicia el gateway en otra terminal:
 

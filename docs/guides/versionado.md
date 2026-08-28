@@ -68,8 +68,8 @@ El push del tag `v*.*.*` dispara `.github/workflows/release.yml`, que construye 
 
 ```bash
 npm view @johpaz/hivecrypto version
-docker run --rm johpaz/hive-agents:<versión> --version
-curl -s https://api.github.com/repos/johpaz/hive/releases/latest | grep '"name"'
+docker run --rm johpaz/hivecrypto:<versión> --version
+curl -s https://api.github.com/repos/johpaz/hiveCrypto/releases/latest | grep '"name"'
 ```
 
 El GitHub Release debe traer únicamente instaladores de escritorio (`.deb`, `.rpm`, `.dmg`, `.exe`, `.msi`, `.flatpak`), `latest.json` (el manifiesto del updater) y `checksums.txt`. Los binarios standalone de Bun ya no se publican — la instalación sin dependencias es la app de escritorio; el paquete npm y Docker cubren el resto.

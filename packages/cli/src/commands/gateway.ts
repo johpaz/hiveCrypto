@@ -247,7 +247,7 @@ async function isRunning(): Promise<boolean> {
   // regardless of PID file or adapter state
   try {
     const coreConfig = loadConfig();
-    const port = coreConfig?.gateway?.port ?? 18790;
+    const port = coreConfig?.gateway?.port ?? 18791;
     const res = await fetch(`http://127.0.0.1:${port}/health`, {
       signal: AbortSignal.timeout(600),
     });
@@ -530,7 +530,7 @@ async function handleDevMode(
   console.log("⏳ Esperando servicios...");
   const [viteReady, gatewayReady] = await Promise.all([
     hasVite ? waitForVite(5173, 30000) : Promise.resolve(true),
-    waitForHttpPort(18790, "/health", 30000),
+    waitForHttpPort(18791, "/health", 30000),
   ]);
 
   // Give the child a moment to potentially fail before we declare success
@@ -585,9 +585,9 @@ async function handleDevMode(
 ║  🐝  Hive — Modo Desarrollo            ║
 ╠════════════════════════════════════════╣
 ║  UI:        ${url.padEnd(24)}║
-║  API:       http://127.0.0.1:18790     ║
-║  WebSocket: ws://127.0.0.1:18790/ws    ║
-║  Actividad: ws://127.0.0.1:18790/canvas║
+║  API:       http://127.0.0.1:18791     ║
+║  WebSocket: ws://127.0.0.1:18791/ws    ║
+║  Actividad: ws://127.0.0.1:18791/canvas║
 ║  Vite HMR:  http://localhost:5173      ║
 ╠════════════════════════════════════════╣
 ║  ${setupMode ? "🎉 Primer arranque — abriendo setup..." : "Administra tu Hive aquí                "}║

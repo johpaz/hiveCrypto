@@ -66,7 +66,7 @@ try {
     "--outfile",
     output,
   ])
-  console.log(`Hive Desktop sidecar listo: ${output}`)
+  console.log(`hiveCrypto Desktop sidecar listo: ${output}`)
 } finally {
   // The embedded UI file is a build artifact. Restore the repository stub so
   // desktop builds do not leave a multi-megabyte generated diff behind.

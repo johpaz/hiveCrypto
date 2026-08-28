@@ -19,11 +19,11 @@ if (!executable || !expectedVersion) {
 const command = resolve(executable)
 const versionRun = Bun.spawnSync([command, "--version"], { stdout: "pipe", stderr: "pipe" })
 const versionOutput = versionRun.stdout.toString().trim()
-if (versionRun.exitCode !== 0 || versionOutput !== `Hive v${expectedVersion}`) {
+if (versionRun.exitCode !== 0 || versionOutput !== `hiveCrypto v${expectedVersion}`) {
   throw new Error(`Version smoke failed: exit=${versionRun.exitCode}, stdout=${versionOutput}, stderr=${versionRun.stderr.toString()}`)
 }
 
-const hiveHome = mkdtempSync(join(tmpdir(), "hive-release-smoke-"))
+const hiveHome = mkdtempSync(join(tmpdir(), "hivecrypto-release-smoke-"))
 const port = Number(value("--port") ?? "28790")
 if (!Number.isInteger(port) || port < 1024 || port > 65535) {
   throw new Error(`Invalid smoke port: ${port}`)

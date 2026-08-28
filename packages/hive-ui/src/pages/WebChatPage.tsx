@@ -7,6 +7,7 @@ import { useGlobalConfigStore } from "@/stores/useGlobalConfigStore";
 import { useNarration } from "@/hooks/useNarration";
 import { useAgentChat, AGENT_ID } from "@/hooks/useAgentChat";
 import { ChatHistory } from "@/modules/chat/ChatHistory";
+import { ConversationList } from "@/modules/chat/ConversationList";
 import { ChatInput, type ChatAttachment } from "@/modules/chat/ChatInput";
 import { apiClient } from "@/lib/api";
 import { generateId } from "@/lib/utils";
@@ -27,7 +28,9 @@ export function WebChatPage() {
   const { currentUser } = useUserStore();
   const agents = useGlobalConfigStore((s) => s.agents);
   const fetchAgents = useGlobalConfigStore((s) => s.fetchAgents);
-  const { send: sendToAgent, isLoading, sessionId } = useAgentChat();
+  // `threadId` es la conversación abierta: el botón de detener para ESA cola, no
+  // todo lo que el usuario tenga en vuelo.
+  const { send: sendToAgent, isLoading, sessionId, threadId } = useAgentChat();
   const narration = useNarration();
 
   const isConnected = status === "connected";
@@ -62,7 +65,10 @@ export function WebChatPage() {
   );
 
   return (
-    <div className="flex-1 flex flex-col w-full min-h-0 bg-transparent overflow-hidden">
+    <div className="flex-1 flex w-full min-h-0 bg-transparent overflow-hidden">
+      <ConversationList />
+
+      <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
       {/* ── Minimal Header ────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0 z-10 bg-transparent border-b border-white/5">
         <div className="flex items-center gap-3">
@@ -143,11 +149,12 @@ export function WebChatPage() {
       <ChatInput
         onSendMessage={handleSendMessage}
         onStop={() => {
-          if (isConnected) send({ type: "stop", sessionId });
+          if (isConnected) send({ type: "stop", sessionId, threadId });
         }}
         disabled={!isConnected && !isConnecting}
         isStreaming={isLoading}
       />
+      </div>
     </div>
   );
 }

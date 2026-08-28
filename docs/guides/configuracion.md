@@ -16,7 +16,7 @@ Dentro se almacenan `.env`, `.auth_token`, HiveDB, logs, workspace, credenciales
 |---|---|---|
 | `HIVE_HOME` | Directorio de datos | `~/.hivecrypto` |
 | `HIVE_HOST` | Dirección del gateway | `127.0.0.1` |
-| `HIVE_PORT` | Puerto HTTP/WebSocket | `18790` |
+| `HIVE_PORT` | Puerto HTTP/WebSocket | `18791` |
 | `HIVE_AUTH_TOKEN` | Token Bearer y clave de recuperación | generado al arrancar |
 | `HIVE_LOG_LEVEL` | `debug`, `info`, `warn` o `error` | `info` |
 | `HIVE_PUBLIC_URL` | URL pública usada por integraciones | no definida |
@@ -28,7 +28,7 @@ Las variables pueden colocarse en `HIVE_HOME/.env`, una por línea. Las variable
 
 ```dotenv
 HIVE_HOST=127.0.0.1
-HIVE_PORT=18790
+HIVE_PORT=18791
 HIVE_LOG_LEVEL=info
 OPENAI_API_KEY=...
 ```

@@ -112,7 +112,7 @@ export class DockerAdapter implements InstallationAdapter {
     // but we access it via the exposed port
     paths.uiDir = null;
 
-    const port = parseInt(env.HIVE_PORT || "18790", 10) || PORTS.GATEWAY;
+    const port = parseInt(env.HIVE_PORT || "18791", 10) || PORTS.GATEWAY;
     const publicUrl = env.HIVE_PUBLIC_URL || undefined;
 
     return {

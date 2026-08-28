@@ -361,7 +361,7 @@ const goalRunExecutor: JobExecutor = async (job, signal) => {
 
   const notify = async (text: string) => {
     if (channel && notifyUserId) {
-      await sendToUserChannel(channel, notifyUserId, text).catch(() => {});
+      await sendToUserChannel(channel, notifyUserId, text, { threadId }).catch(() => {});
     }
   };
 

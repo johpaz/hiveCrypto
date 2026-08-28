@@ -18,7 +18,7 @@ Mientras no exista una contraseña, el endpoint público de estado no expone el 
 
 - El host predeterminado es `127.0.0.1`.
 - Para contenedores puede usarse `HIVE_HOST=0.0.0.0`, pero debe existir un proxy TLS y control de acceso.
-- No publiques `18790`, `/ws` ni `/meeting-stream` directamente en Internet.
+- No publiques `18791`, `/ws` ni `/meeting-stream` directamente en Internet.
 - Restringe CORS y orígenes permitidos cuando despliegues detrás de un dominio.
 
 ## Secretos

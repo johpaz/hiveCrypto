@@ -12,9 +12,9 @@ import {
 // NETWORK_TESTS=1 bun test tests/network-stability.test.ts --timeout 30000
 const NETWORK_TESTS = process.env.NETWORK_TESTS === "1";
 
-const WS_URL = "ws://127.0.0.1:18790/ws";
-const CANVAS_WS_URL = "ws://127.0.0.1:18790/canvas";
-const HTTP_URL = "http://127.0.0.1:18790";
+const WS_URL = "ws://127.0.0.1:18791/ws";
+const CANVAS_WS_URL = "ws://127.0.0.1:18791/canvas";
+const HTTP_URL = "http://127.0.0.1:18791";
 
 interface ConnectionMetrics {
   messagesSent: number;
@@ -258,7 +258,7 @@ async function waitForServer(maxAttempts = 10): Promise<boolean> {
   for (let i = 0; i < maxAttempts; i++) {
     try {
       // Try WebSocket connection
-      const ws = new WebSocket("ws://127.0.0.1:18790/ws");
+      const ws = new WebSocket("ws://127.0.0.1:18791/ws");
       await new Promise<void>((resolve, reject) => {
         ws.onopen = () => {
           ws.close();

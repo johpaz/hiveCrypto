@@ -119,7 +119,7 @@ export class BunGlobalAdapter implements InstallationAdapter {
 
     paths.uiDir = uiDir;
 
-    const port = parseInt(env.HIVE_PORT || "18790", 10) || PORTS.GATEWAY;
+    const port = parseInt(env.HIVE_PORT || "18791", 10) || PORTS.GATEWAY;
     const publicUrl = env.HIVE_PUBLIC_URL || undefined;
 
     return {

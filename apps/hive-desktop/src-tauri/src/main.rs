@@ -26,7 +26,7 @@ use tauri_plugin_shell::{
 /// tomaba un puerto libre al azar en cada arranque, así que cada instalación
 /// vivía en una dirección distinta de la que documentamos y de la que el
 /// usuario ve en el navegador.
-const DEFAULT_PORT: u16 = 18790;
+const DEFAULT_PORT: u16 = 18791;
 
 struct GatewayState {
     child: Mutex<Option<CommandChild>>,
@@ -85,19 +85,19 @@ fn monitor_gateway(mut events: tauri::async_runtime::Receiver<CommandEvent>) {
             match event {
                 CommandEvent::Stdout(bytes) => {
                     println!(
-                        "[Hive Gateway] {}",
+                        "[hiveCrypto Gateway] {}",
                         String::from_utf8_lossy(&bytes).trim_end()
                     )
                 }
                 CommandEvent::Stderr(bytes) => {
                     eprintln!(
-                        "[Hive Gateway] {}",
+                        "[hiveCrypto Gateway] {}",
                         String::from_utf8_lossy(&bytes).trim_end()
                     )
                 }
-                CommandEvent::Error(error) => eprintln!("[Hive Gateway] {error}"),
+                CommandEvent::Error(error) => eprintln!("[hiveCrypto Gateway] {error}"),
                 CommandEvent::Terminated(payload) => {
-                    eprintln!("[Hive Gateway] terminado: {payload:?}");
+                    eprintln!("[hiveCrypto Gateway] terminado: {payload:?}");
                 }
                 _ => {}
             }
@@ -109,7 +109,7 @@ fn monitor_gateway(mut events: tauri::async_runtime::Receiver<CommandEvent>) {
 ///
 /// El evento `Terminated` del sidecar no alcanza: el proceso que Tauri lanza es
 /// el envoltorio de la CLI, y el servidor de verdad corre como *nieto*. Cuando
-/// ese servidor se muere —un crash, un `hive start` desde la terminal que libera
+/// ese servidor se muere —un crash, un `hivecrypto start` desde la terminal que libera
 /// el puerto a la fuerza— el envoltorio sigue vivo, Tauri nunca se entera y la
 /// ventana se queda hablándole a un puerto muerto: conectada en apariencia,
 /// muda en los hechos. Preguntarle a `/health` es la única señal que cubre los
@@ -135,7 +135,7 @@ fn watch_gateway_health(
                 continue;
             }
 
-            eprintln!("[Hive Agents] el gateway dejó de responder — reiniciándolo");
+            eprintln!("[hiveCrypto] el gateway dejó de responder — reiniciándolo");
             if let Some(state) = app.try_state::<GatewayState>() {
                 if let Ok(mut child) = state.child.lock() {
                     if let Some(previous) = child.take() {
@@ -153,16 +153,16 @@ fn watch_gateway_health(
                         }
                     }
                     if wait_for_gateway(port).await.is_err() {
-                        eprintln!("[Hive Agents] el gateway reiniciado no respondió a tiempo");
+                        eprintln!("[hiveCrypto] el gateway reiniciado no respondió a tiempo");
                     }
                 }
-                Err(error) => eprintln!("[Hive Agents] no se pudo reiniciar el gateway: {error}"),
+                Err(error) => eprintln!("[hiveCrypto] no se pudo reiniciar el gateway: {error}"),
             }
         }
     });
 }
 
-/// `$HIVE_HOME`, o `~/.hive` — el mismo directorio que usa la CLI instalada con
+/// `$HIVE_HOME`, o `~/.hivecrypto` — el mismo directorio que usa la CLI instalada con
 /// bun. Antes la app guardaba todo bajo su propio `app_data_dir`, así que la
 /// versión de escritorio y la de terminal eran dos instalaciones separadas con
 /// agentes, historial y claves distintos aunque el usuario creyera lo contrario.
@@ -172,7 +172,7 @@ fn resolve_hive_home(app: &AppHandle) -> Result<PathBuf, String> {
     }
     app.path()
         .home_dir()
-        .map(|home| home.join(".hive"))
+        .map(|home| home.join(".hivecrypto"))
         .map_err(|error| format!("No se pudo resolver el directorio del usuario: {error}"))
 }
 
@@ -190,20 +190,20 @@ fn copy_tree(from: &PathBuf, to: &PathBuf) -> std::io::Result<()> {
 }
 
 /// Trae los datos que la app dejó en su propio `app_data_dir` cuando usaba un
-/// HIVE_HOME separado. Sin esto, mudarse a `~/.hive` sería empezar de cero:
+/// HIVE_HOME separado. Sin esto, mudarse a `~/.hivecrypto` sería empezar de cero:
 /// agentes, historial, claves y servidores MCP viven en esa carpeta.
 fn migrate_legacy_home(app: &AppHandle, hive_home: &PathBuf) {
     if hive_home.join("data").exists() {
         return; // ya hay una instalación acá; no tocar nada
     }
-    let Ok(legacy) = app.path().app_data_dir().map(|dir| dir.join("hive")) else {
+    let Ok(legacy) = app.path().app_data_dir().map(|dir| dir.join("hivecrypto")) else {
         return;
     };
     if legacy == *hive_home || !legacy.join("data").exists() {
         return;
     }
 
-    println!("[Hive Agents] migrando datos de {legacy:?} a {hive_home:?}");
+    println!("[hiveCrypto] migrando datos de {legacy:?} a {hive_home:?}");
     let Ok(entries) = std::fs::read_dir(&legacy) else { return };
     for entry in entries.flatten() {
         let target = hive_home.join(entry.file_name());
@@ -216,7 +216,7 @@ fn migrate_legacy_home(app: &AppHandle, hive_home: &PathBuf) {
         }
         // Otro sistema de archivos: copiar y dejar el original como respaldo.
         if let Err(error) = copy_tree(&source, &target) {
-            eprintln!("[Hive Agents] no se pudo migrar {source:?}: {error}");
+            eprintln!("[hiveCrypto] no se pudo migrar {source:?}: {error}");
         }
     }
 }
@@ -228,12 +228,12 @@ fn start_gateway(app: &AppHandle) -> Result<GatewayState, String> {
     migrate_legacy_home(app, &hive_home);
     let shutting_down = Arc::new(AtomicBool::new(false));
 
-    // Ya hay un Hive sano escuchando (por ejemplo `hive start` desde la
+    // Ya hay un hiveCrypto sano escuchando (por ejemplo `hivecrypto start` desde la
     // terminal): esta ventana se conecta a ese y no levanta un segundo gateway.
-    // Arrancar otro terminaría matándolo — `hive start` libera el puerto a la
+    // Arrancar otro terminaría matándolo — `hivecrypto start` libera el puerto a la
     // fuerza antes de ligarlo.
     if gateway_is_healthy(DEFAULT_PORT) {
-        println!("[Hive Agents] gateway ya activo en {DEFAULT_PORT} — usando esa instancia");
+        println!("[hiveCrypto] gateway ya activo en {DEFAULT_PORT} — usando esa instancia");
         return Ok(GatewayState {
             child: Mutex::new(None),
             port: DEFAULT_PORT,
@@ -243,14 +243,14 @@ fn start_gateway(app: &AppHandle) -> Result<GatewayState, String> {
         });
     }
 
-    // El puerto de siempre; solo si está tomado por algo que no es Hive se cae
+    // El puerto de siempre; solo si está tomado por algo que no es hiveCrypto se cae
     // a uno libre, para que la app arranque igual en vez de morir.
     let port = if TcpListener::bind(("127.0.0.1", DEFAULT_PORT)).is_ok() {
         DEFAULT_PORT
     } else {
         let fallback = available_port()?;
         eprintln!(
-            "[Hive Agents] el puerto {DEFAULT_PORT} está ocupado por otro proceso — usando {fallback}"
+            "[hiveCrypto] el puerto {DEFAULT_PORT} está ocupado por otro proceso — usando {fallback}"
         );
         fallback
     };
@@ -318,7 +318,7 @@ fn stop_gateway(state: &GatewayState) {
     if let Ok(mut child) = state.child.lock() {
         if let Some(child) = child.take() {
             if let Err(error) = child.kill() {
-                eprintln!("[Hive Agents] no se pudo detener el gateway: {error}");
+                eprintln!("[hiveCrypto] no se pudo detener el gateway: {error}");
             }
         }
     }
@@ -493,7 +493,7 @@ fn flujos_propios() -> Vec<String> {
 fn nombre_de_proceso() -> String {
     std::fs::read_to_string("/proc/self/comm")
         .map(|s| s.trim().to_string())
-        .unwrap_or_else(|_| "hive-desktop".to_string())
+        .unwrap_or_else(|_| "hivecrypto-desktop".to_string())
 }
 
 #[cfg(target_os = "linux")]
@@ -568,7 +568,7 @@ fn enable_media_capture(window: &tauri::WebviewWindow) {
     });
 
     if let Err(error) = result {
-        eprintln!("[hive-desktop] no se pudo habilitar la captura de audio/video: {error}");
+        eprintln!("[hivecrypto-desktop] no se pudo habilitar la captura de audio/video: {error}");
     }
 }
 
@@ -579,7 +579,7 @@ fn create_window(app: &AppHandle, port: u16) -> Result<(), String> {
     let url =
         url::Url::parse(&format!("http://127.0.0.1:{port}")).map_err(|error| error.to_string())?;
     let window = WebviewWindowBuilder::new(app, "main", WebviewUrl::External(url))
-        .title("Hive Agents")
+        .title("hiveCrypto")
         .inner_size(1440.0, 900.0)
         .min_inner_size(1024.0, 700.0)
         .resizable(true)
@@ -590,7 +590,7 @@ fn create_window(app: &AppHandle, port: u16) -> Result<(), String> {
 }
 
 fn create_tray(app: &AppHandle) -> Result<(), String> {
-    let show = MenuItem::with_id(app, "show", "Mostrar Hive", true, None::<&str>)
+    let show = MenuItem::with_id(app, "show", "Mostrar hiveCrypto", true, None::<&str>)
         .map_err(|error| error.to_string())?;
     let quit = MenuItem::with_id(app, "quit", "Salir", true, None::<&str>)
         .map_err(|error| error.to_string())?;
@@ -645,7 +645,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
 
 fn main() {
     if let Err(error) = run() {
-        eprintln!("[Hive Agents] {error}");
+        eprintln!("[hiveCrypto] {error}");
         std::process::exit(1);
     }
 }
@@ -657,9 +657,9 @@ mod tests {
 
     #[test]
     fn copy_tree_preserves_nested_data() {
-        // La migración a ~/.hive no puede perder el árbol de datos cuando el
+        // la migración a ~/.hivecrypto no puede perder el árbol de datos cuando el
         // rename falla por cruzar de sistema de archivos.
-        let root = std::env::temp_dir().join(format!("hive-copy-tree-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("hivecrypto-copy-tree-{}", std::process::id()));
         let from = root.join("origen");
         let to = root.join("destino");
         std::fs::create_dir_all(from.join("data/nested")).unwrap();

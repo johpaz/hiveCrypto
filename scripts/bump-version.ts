@@ -71,11 +71,11 @@ const packageFiles = [
 // únicas menciones de versión en prosa/instrucciones que sí quedan hardcodeadas.
 function textReplacements(newVersion: string) {
   return [
-    { path: "README.md", pattern: /johpaz\/hive-agents:[\d.]+/g, replacement: `johpaz/hive-agents:${newVersion}` },
-    { path: "README.md", pattern: /bun add --global @johpaz\/hive-agents@[\d.]+/g, replacement: `bun add --global @johpaz/hivecrypto@${newVersion}` },
+    { path: "README.md", pattern: /johpaz\/hivecrypto:[\d.]+/g, replacement: `johpaz/hivecrypto:${newVersion}` },
+    { path: "README.md", pattern: /bun add --global @johpaz\/hivecrypto@[\d.]+/g, replacement: `bun add --global @johpaz/hivecrypto@${newVersion}` },
     { path: "README.md", pattern: /badge\/versi%C3%B3n-[\d.]+-/g, replacement: `badge/versi%C3%B3n-${newVersion}-` },
-    { path: "docs/guides/instalacion.md", pattern: /johpaz\/hive-agents:[\d.]+/g, replacement: `johpaz/hive-agents:${newVersion}` },
-    { path: "docs/guides/instalacion.md", pattern: /bun add --global @johpaz\/hive-agents@[\d.]+/g, replacement: `bun add --global @johpaz/hivecrypto@${newVersion}` },
+    { path: "docs/guides/instalacion.md", pattern: /johpaz\/hivecrypto:[\d.]+/g, replacement: `johpaz/hivecrypto:${newVersion}` },
+    { path: "docs/guides/instalacion.md", pattern: /bun add --global @johpaz\/hivecrypto@[\d.]+/g, replacement: `bun add --global @johpaz/hivecrypto@${newVersion}` },
     {
       path: "apps/hive-desktop/src-tauri/Cargo.toml",
       // Única línea `version = "..."` sin indentar: la de [package]. Las
@@ -86,9 +86,9 @@ function textReplacements(newVersion: string) {
     },
     {
       path: "apps/hive-desktop/src-tauri/Cargo.lock",
-      // Acotado al bloque [[package]] de hive-desktop (el crate raíz), no a
+      // Acotado al bloque [[package]] de hivecrypto-desktop (el crate raíz), no a
       // cualquier dependencia externa que también declare "version".
-      pattern: /(\[\[package\]\]\nname = "hive-desktop"\nversion = ")[\d.]+(")/,
+      pattern: /(\[\[package\]\]\nname = "hivecrypto-desktop"\nversion = ")[\d.]+(")/,
       replacement: `$1${newVersion}$2`,
     },
   ];

@@ -163,6 +163,8 @@ Generado desde el código fuente para Hive **0.1.0**.
 | `@johpaz/hivecrypto` | `./agent/context-compiler` | `./packages/core/src/agent/context-compiler.ts` |
 | `@johpaz/hivecrypto` | `./agent/prompt-builder` | `./packages/core/src/agent/prompt-builder.ts` |
 | `@johpaz/hivecrypto` | `./agent/conversation-store` | `./packages/core/src/agent/conversation-store.ts` |
+| `@johpaz/hivecrypto` | `./agent/thread-id` | `./packages/core/src/agent/thread-id.ts` |
+| `@johpaz/hivecrypto` | `./agent/thread-store` | `./packages/core/src/agent/thread-store.ts` |
 | `@johpaz/hivecrypto` | `./agent/tool-selector` | `./packages/core/src/agent/tool-selector.ts` |
 | `@johpaz/hivecrypto` | `./agent/skill-selector` | `./packages/core/src/agent/skill-selector.ts` |
 | `@johpaz/hivecrypto` | `./agent/playbook-selector` | `./packages/core/src/agent/playbook-selector.ts` |

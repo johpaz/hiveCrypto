@@ -1,7 +1,7 @@
 {
   "name": "@johpaz/hivecrypto",
   "version": "0.1.0",
-  "description": "hiveCrypto — vertical de trading cripto sobre la colmena de agentes Hive. Servidor MCP 2026-07-28, análisis de mercado y paper trading. Local-first.",
+  "description": "hiveCrypto \u2014 vertical de trading cripto sobre la colmena de agentes Hive. Servidor MCP 2026-07-28, an\u00e1lisis de mercado y paper trading. Local-first.",
   "private": false,
   "bin": {
     "hivecrypto": "dist/hivecrypto.js"
@@ -19,6 +19,8 @@
     "./agent/context-compiler": "./packages/core/src/agent/context-compiler.ts",
     "./agent/prompt-builder": "./packages/core/src/agent/prompt-builder.ts",
     "./agent/conversation-store": "./packages/core/src/agent/conversation-store.ts",
+    "./agent/thread-id": "./packages/core/src/agent/thread-id.ts",
+    "./agent/thread-store": "./packages/core/src/agent/thread-store.ts",
     "./agent/tool-selector": "./packages/core/src/agent/tool-selector.ts",
     "./agent/skill-selector": "./packages/core/src/agent/skill-selector.ts",
     "./agent/playbook-selector": "./packages/core/src/agent/playbook-selector.ts",
@@ -78,7 +80,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/johpaz/hive.git"
+    "url": "git+https://github.com/johpaz/hiveCrypto.git"
   },
   "keywords": [
     "crypto",
@@ -147,5 +149,9 @@
   },
   "resolutions": {
     "vite": "^8.0.0"
+  },
+  "homepage": "https://github.com/johpaz/hiveCrypto",
+  "bugs": {
+    "url": "https://github.com/johpaz/hiveCrypto/issues"
   }
 }

@@ -3,7 +3,7 @@
 ## Preparación
 
 ```bash
-git clone https://github.com/johpaz/hive.git
+git clone https://github.com/johpaz/hiveCrypto.git
 cd hive
 bun install
 ```

@@ -20,27 +20,27 @@ export default defineConfig({
     },
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:18790",
+        target: "http://127.0.0.1:18791",
         changeOrigin: true,
         rewrite: (path) => path,
       },
       "/health": {
-        target: "http://127.0.0.1:18790",
+        target: "http://127.0.0.1:18791",
         changeOrigin: true,
         rewrite: (path) => path,
       },
       "/status": {
-        target: "http://127.0.0.1:18790",
+        target: "http://127.0.0.1:18791",
         changeOrigin: true,
         rewrite: (path) => path,
       },
       "/ws": {
-        target: "ws://127.0.0.1:18790",
+        target: "ws://127.0.0.1:18791",
         ws: true,
         rewrite: (path) => path,
       },
       "/realtime": {
-        target: "ws://127.0.0.1:18790",
+        target: "ws://127.0.0.1:18791",
         ws: true,
         rewrite: (path) => path,
       },

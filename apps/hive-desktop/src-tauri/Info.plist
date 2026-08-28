@@ -14,8 +14,8 @@
 <plist version="1.0">
 <dict>
   <key>NSMicrophoneUsageDescription</key>
-  <string>Hive usa el micrófono para transcribir tus notas de voz en el chat y para hablar con la colmena en HiveLive.</string>
+  <string>hiveCrypto usa el micrófono para transcribir tus notas de voz en el chat y para hablar con la colmena en HiveLive.</string>
   <key>NSCameraUsageDescription</key>
-  <string>Hive usa la cámara solo si la activas en HiveLive, para que la voz de la colmena pueda ver lo que le muestras.</string>
+  <string>hiveCrypto usa la cámara solo si la activas en HiveLive, para que la voz de la colmena pueda ver lo que le muestras.</string>
 </dict>
 </plist>

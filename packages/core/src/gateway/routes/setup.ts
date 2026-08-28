@@ -521,7 +521,7 @@ export async function handleCompleteSetup(
     const envContent = [
       "# Hive configuration — auto-generated during setup",
       `HIVE_HOST=${process.env.HIVE_HOST || "127.0.0.1"}`,
-      `HIVE_PORT=${process.env.HIVE_PORT || "18790"}`,
+      `HIVE_PORT=${process.env.HIVE_PORT || "18791"}`,
       `HIVE_LOG_LEVEL=${process.env.HIVE_LOG_LEVEL || "info"}`,
       `HIVE_AUTH_TOKEN=${authToken}`,
       "",

@@ -9,14 +9,14 @@ Para usar el repositorio se requiere Bun 1.3.x y Git. Docker y la app de escrito
 El paquete publicado en npm **requiere Bun** como runtime — no funciona con Node. `dist/hive.js` lleva `#!/usr/bin/env bun` y usa APIs exclusivas de Bun (`Bun.spawn`, `Bun.serve`, `Bun.file`, etc.). `npm install -g` funciona porque solo descarga el paquete, pero `hive` no arranca sin Bun instalado en el `PATH`.
 
 ```bash
-bun add --global @johpaz/hivecrypto@1.0.4
+bun add --global @johpaz/hivecrypto@0.1.0
 hive start
 ```
 
 ## Desde el repositorio
 
 ```bash
-git clone https://github.com/johpaz/hive.git
+git clone https://github.com/johpaz/hiveCrypto.git
 cd hive
 bun install
 bun run hive start
@@ -34,9 +34,9 @@ Este comando construye la UI y usa un `HIVE_HOME` de desarrollo separado.
 
 ```bash
 docker run --name hive \
-  -p 18790:18790 \
+  -p 18791:18791 \
   -v hive-data:/root/.hivecrypto \
-  johpaz/hive-agents:1.0.4
+  johpaz/hivecrypto:0.1.0
 ```
 
 El volumen conserva HiveDB, configuración, credenciales de canales y artefactos. No expongas el puerto directamente a Internet; usa un proxy TLS y conserva la autenticación.
@@ -51,13 +51,13 @@ HIVE_DOMAIN=hive.tu-dominio.com HIVE_PUBLIC_URL=https://hive.tu-dominio.com \
   docker compose -f docker-compose.hostinguer.yml up -d
 ```
 
-El repo también trae utilidades de conveniencia para arrancar localmente (`hive-docker.sh`, `start.sh`) y para construir y publicar la imagen a mano (`build.sh`). Sobre `build.sh --push`: construye **solo para la arquitectura de la máquina donde corre** (sin `buildx`, sin multi-arch) — si lo corrés desde un Mac ARM, el `latest` que sube pisa el manifiesto `linux/amd64,linux/arm64` que produce el release oficial. Para un VPS, preferí siempre la imagen publicada por el pipeline de release (`johpaz/hive-agents:<versión>`) en vez de reconstruir localmente.
+El repo también trae utilidades de conveniencia para arrancar localmente (`hive-docker.sh`, `start.sh`) y para construir y publicar la imagen a mano (`build.sh`). Sobre `build.sh --push`: construye **solo para la arquitectura de la máquina donde corre** (sin `buildx`, sin multi-arch) — si lo corrés desde un Mac ARM, el `latest` que sube pisa el manifiesto `linux/amd64,linux/arm64` que produce el release oficial. Para un VPS, preferí siempre la imagen publicada por el pipeline de release (`johpaz/hivecrypto:<versión>`) en vez de reconstruir localmente.
 
 ## App de escritorio
 
 La app de escritorio (Windows, macOS, Linux) no requiere Bun, Docker ni Git: es un shell [Tauri](https://tauri.app) que trae el gateway embebido como proceso secundario y lo levanta al abrir la ventana.
 
-Descarga el instalador de tu sistema desde la [última versión](https://github.com/johpaz/hive/releases/latest):
+Descarga el instalador de tu sistema desde la [última versión](https://github.com/johpaz/hiveCrypto/releases/latest):
 
 | Sistema | Instaladores |
 |---|---|

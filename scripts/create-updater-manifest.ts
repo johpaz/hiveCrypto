@@ -86,7 +86,7 @@ function findUpdaterAsset(platform: Platform): string {
 }
 
 const platforms = {} as Record<string, { signature: string; url: string }>
-const releaseBase = `https://github.com/johpaz/hive/releases/download/v${version}`
+const releaseBase = `https://github.com/johpaz/hiveCrypto/releases/download/v${version}`
 
 for (const platform of [
   "linux-x86_64",
@@ -113,7 +113,7 @@ await Bun.write(
   `${JSON.stringify(
     {
       version,
-      notes: `Hive ${version}`,
+      notes: `hiveCrypto ${version}`,
       pub_date: new Date().toISOString(),
       platforms,
     },

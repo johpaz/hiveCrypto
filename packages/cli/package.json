@@ -1,7 +1,7 @@
 {
   "name": "@johpaz/hivecrypto-cli",
   "version": "0.1.0",
-  "description": "Hive CLI — Command line interface for the Hive AI Gateway",
+  "description": "hiveCrypto CLI \u2014 interfaz de l\u00ednea de comandos del gateway de hiveCrypto",
   "bin": {
     "hivecrypto": "./dist/hivecrypto.js"
   },

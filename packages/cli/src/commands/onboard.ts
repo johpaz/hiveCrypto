@@ -483,14 +483,14 @@ async function installSystemdService(): Promise<void> {
   }
 
   const serviceContent = `[Unit]
-Description=Hive Personal AI Gateway
+Description=hiveCrypto Personal AI Gateway
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=${home}/.bun/bin/hive start
-ExecStop=${home}/.bun/bin/hive stop
+ExecStart=${home}/.bun/bin/hivecrypto start
+ExecStop=${home}/.bun/bin/hivecrypto stop
 Restart=on-failure
 RestartSec=5
 Environment=PATH=${home}/.bun/bin:${home}/.npm-global/bin:/usr/local/bin:/usr/bin:/bin
@@ -500,12 +500,12 @@ WorkingDirectory=${home}
 WantedBy=default.target
 `;
 
-  const servicePath = path.join(systemdDir, "hive.service");
+  const servicePath = path.join(systemdDir, "hivecrypto.service");
   fs.writeFileSync(servicePath, serviceContent, "utf-8");
 
   const { spawnSync } = require("child_process");
   spawnSync("systemctl", ["--user", "daemon-reload"], { stdio: "inherit" });
-  spawnSync("systemctl", ["--user", "enable", "hive"], { stdio: "inherit" });
+  spawnSync("systemctl", ["--user", "enable", "hivecrypto"], { stdio: "inherit" });
 }
 
 async function isGatewayRunning(): Promise<boolean> {
@@ -1482,7 +1482,7 @@ async function runFullWizard(): Promise<void> {
           channelUserId: state.sessionToken,
         });
 
-        log.success("✅ WebChat activado por defecto (http://localhost:18790/ui)");
+        log.success("✅ WebChat activado por defecto (http://localhost:18791/ui)");
 
         // Preguntar si quiere activar Telegram (recomendado)
         const activateTelegram = await p.confirm({

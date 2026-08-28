@@ -1,6 +1,6 @@
 # API HTTP y WebSocket
 
-El gateway expone la UI y APIs operativas en el mismo puerto. El valor predeterminado es `http://127.0.0.1:18790`.
+El gateway expone la UI y APIs operativas en el mismo puerto. El valor predeterminado es `http://127.0.0.1:18791`.
 
 ## Autenticación
 
@@ -8,7 +8,7 @@ Salvo onboarding, estado de autenticación, login, recuperación y health, las r
 
 ```bash
 curl -H "Authorization: Bearer $HIVE_AUTH_TOKEN" \
-  http://127.0.0.1:18790/status
+  http://127.0.0.1:18791/status
 ```
 
 ## Grupos de rutas

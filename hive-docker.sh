@@ -6,7 +6,7 @@ if [ ! -f ".env" ]; then
   cat > .env << 'EOF'
 # Hive home directory - acceso a archivos del host
 # El agente podrá acceder a este directorio configurando workspace en la UI
-# Más información: https://github.com/johpaz/hive#acceso-a-archivos-del-sistema-desde-docker
+# Más información: https://github.com/johpaz/hiveCrypto#acceso-a-archivos-del-sistema-desde-docker
 EOF
   
   case "$(uname -s)" in

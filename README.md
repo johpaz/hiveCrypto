@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="Licencia MIT" src="https://img.shields.io/badge/licencia-MIT-3b82f6.svg"></a>
-  <img alt="Versión" src="https://img.shields.io/badge/versi%C3%B3n-1.0.4-6f42c1.svg">
+  <img alt="Versión" src="https://img.shields.io/badge/versi%C3%B3n-0.1.0-6f42c1.svg">
   <img alt="Bun" src="https://img.shields.io/badge/bun-%3E%3D1.3-fbf0df?logo=bun&logoColor=000">
   <img alt="TypeScript" src="https://img.shields.io/badge/typescript-7.0-3178c6?logo=typescript&logoColor=fff">
   <a href="docs/README.md"><img alt="Documentación" src="https://img.shields.io/badge/docs-espa%C3%B1ol-0ea5e9.svg"></a>
@@ -119,18 +119,18 @@ Requisitos para desarrollar desde el repositorio: Bun 1.3.x y Git.
 ### Desde el repositorio
 
 ```bash
-git clone https://github.com/johpaz/hive.git
-cd hive
+git clone https://github.com/johpaz/hiveCrypto.git
+cd hiveCrypto
 bun install
 bun run hive start
 ```
 
-El gateway escucha por defecto en `127.0.0.1:18790`. En el primer arranque, `hive start` abre el asistente de configuración en el navegador: ahí se registra el modelo principal y el resto de la configuración inicial.
+El gateway escucha por defecto en `127.0.0.1:18791`. En el primer arranque, `hive start` abre el asistente de configuración en el navegador: ahí se registra el modelo principal y el resto de la configuración inicial.
 
 ### Instalación global
 
 ```bash
-bun add --global @johpaz/hivecrypto@1.0.4
+bun add --global @johpaz/hivecrypto@0.1.0
 hive start
 ```
 
@@ -138,16 +138,16 @@ hive start
 
 ```bash
 docker run --name hive \
-  -p 18790:18790 \
+  -p 18791:18791 \
   -v hive-data:/root/.hivecrypto \
-  johpaz/hive-agents:1.0.4
+  johpaz/hivecrypto:0.1.0
 ```
 
 ### App de escritorio (Windows, macOS, Linux)
 
 No requiere Bun, Docker ni Git — el instalador trae el gateway embebido y arranca la app con un doble clic.
 
-Descarga el instalador para tu sistema desde la [última versión](https://github.com/johpaz/hive/releases/latest):
+Descarga el instalador para tu sistema desde la [última versión](https://github.com/johpaz/hiveCrypto/releases/latest):
 
 | Sistema | Instalador |
 |---|---|

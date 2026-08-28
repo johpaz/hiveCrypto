@@ -12,6 +12,7 @@ import { getWsBaseUrl } from "@/lib/gateway-url";
 import { RealtimeMic, RealtimePlayer, describeMicError, type SpectrumTap } from "@/lib/realtime/audio";
 import { RealtimeCamera, describeCameraError } from "@/lib/realtime/camera";
 import { RealtimeScreen, describeScreenError } from "@/lib/realtime/screen";
+import { useConversationsStore } from "@/stores/conversationsStore";
 
 export type VoiceStatus = "idle" | "connecting" | "listening" | "speaking" | "error";
 
@@ -174,13 +175,21 @@ export function saveAvatarPref(kind: AvatarKind): void {
   if (typeof localStorage !== "undefined") localStorage.setItem(PREF_AVATAR, kind);
 }
 
-function buildRealtimeUrl(sessionId: string, voice?: string, language?: string): string {
+function buildRealtimeUrl(
+  sessionId: string,
+  voice?: string,
+  language?: string,
+  threadId?: string | null,
+): string {
   const url = new URL(`${getWsBaseUrl()}/realtime`);
   url.searchParams.set("session", sessionId);
   const token = typeof localStorage !== "undefined" ? localStorage.getItem("hive-auth-token") : null;
   if (token) url.searchParams.set("token", token);
   if (voice) url.searchParams.set("voice", voice);
   if (language) url.searchParams.set("lang", language);
+  // La llamada continúa la conversación abierta en el chat: BIA arranca sabiendo
+  // de qué se venía hablando en vez de empezar en blanco.
+  if (threadId) url.searchParams.set("conv", threadId);
   return url.toString();
 }
 
@@ -317,7 +326,12 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
 
     const prefs = loadVoicePrefs();
     ws = new WebSocket(
-      buildRealtimeUrl(sessionId, voice ?? prefs.voice, language ?? prefs.language),
+      buildRealtimeUrl(
+        sessionId,
+        voice ?? prefs.voice,
+        language ?? prefs.language,
+        useConversationsStore.getState().activeId,
+      ),
     );
     ws.binaryType = "arraybuffer";
 

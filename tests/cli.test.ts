@@ -320,7 +320,7 @@ describe("🖥️ CLI Test Suite", () => {
       console.log("\n📌 Testing config reset...");
 
       const defaults = {
-        port: 18790,
+        port: 18791,
         host: "127.0.0.1",
         logLevel: "info",
       };
@@ -329,7 +329,7 @@ describe("🖥️ CLI Test Suite", () => {
       const resetConfig = { ...defaults };
 
       expect((resetConfig as any).custom).toBeUndefined();
-      expect(resetConfig.port).toBe(18790);
+      expect(resetConfig.port).toBe(18791);
 
       console.log(`   ✅ Config reset works`);
     });
@@ -662,7 +662,7 @@ models:
         }
       };
 
-      const result = await checkConnectivity("127.0.0.1", 18790);
+      const result = await checkConnectivity("127.0.0.1", 18791);
       expect(typeof result).toBe("boolean");
 
       console.log(`   ✅ Connectivity check works`);
@@ -774,7 +774,7 @@ Commands:
       const examples = [
         "hive start --daemon",
         "hive chat --agent bee",
-        "hive config set port 18790",
+        "hive config set port 18791",
         "hive message send --to user --content hello",
       ];
 
@@ -819,7 +819,7 @@ Commands:
         }
       };
 
-      const connected = await connectToGateway("127.0.0.1", 18790);
+      const connected = await connectToGateway("127.0.0.1", 18791);
       expect(typeof connected).toBe("boolean");
 
       console.log(`   ✅ Gateway connection works`);

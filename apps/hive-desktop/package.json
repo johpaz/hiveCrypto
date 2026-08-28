@@ -2,7 +2,7 @@
   "name": "@johpaz/hivecrypto-desktop",
   "version": "0.1.0",
   "private": true,
-  "description": "Hive Agents — Tauri shell with an embedded Hive gateway",
+  "description": "hiveCrypto \u2014 c\u00e1scara Tauri con el gateway de hiveCrypto embebido",
   "scripts": {
     "prepare:sidecar": "bun ../../scripts/build-desktop.ts",
     "dev": "cargo tauri dev",

@@ -1,18 +1,18 @@
-# Hive Agents
+# hiveCrypto Desktop
 
-Hive Agents is the native Tauri shell for Hive. It keeps the existing React
-UI and starts a target-specific compiled Hive gateway as a bundled sidecar.
-The release installers contain everything Hive needs at runtime; end users do
-not install Bun, Node.js, Rust, Docker, or the Hive CLI.
+hiveCrypto Desktop is the native Tauri shell for hiveCrypto. It keeps the existing React
+UI and starts a target-specific compiled hiveCrypto gateway as a bundled sidecar.
+The release installers contain everything hiveCrypto needs at runtime; end users do
+not install Bun, Node.js, Rust, Docker, or the hiveCrypto CLI.
 
 ## Requirements for development
 
-- Bun 1.3+
+- Bun 1.4+
 - Rust 1.84+
 - `cargo-tauri` 2.x (`cargo install tauri-cli --version '^2'`)
 - Linux development packages required by WebKitGTK/libsoup when building on Linux
 
-These requirements apply only when compiling Hive Agents from source. They
+These requirements apply only when compiling hiveCrypto Desktop from source. They
 are not requirements for users installing a release.
 
 ## Development
@@ -56,7 +56,7 @@ the sidecar directly via its own manifest.
 
 Linux users should choose Flatpak for sandboxing, or `.deb`/`.rpm` for native
 package-manager integration. The `.deb`, `.rpm`, and Flatpak declare their
-runtime WebKitGTK/GTK environment so users do not have to install Hive
+runtime WebKitGTK/GTK environment so users do not have to install hiveCrypto
 dependencies manually. Tauri still uses the operating system WebView on
 Linux; this is why the Linux release offers multiple native packaging
 formats.
@@ -74,7 +74,7 @@ not that the *installer* is trusted by the OS.
 
 The updater reads the signed metadata from:
 
-`https://github.com/johpaz/hive/releases/latest/download/latest.json`
+`https://github.com/johpaz/hiveCrypto/releases/latest/download/latest.json`
 
 Update signing (minisign, via the Tauri updater plugin) requires the
 `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` GitHub
@@ -83,4 +83,4 @@ commit the private key.
 
 The desktop shell chooses a free loopback port, creates an application-scoped
 `HIVE_HOME`, starts the gateway, waits for `/health`, and then opens the existing
-Hive UI over HTTP/WebSocket. Closing the app terminates the sidecar.
+hiveCrypto UI over HTTP/WebSocket. Closing the app terminates the sidecar.

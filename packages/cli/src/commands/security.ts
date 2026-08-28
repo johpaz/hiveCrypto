@@ -20,7 +20,7 @@ export async function securityAudit(): Promise<void> {
 
   // Red
   results.push({ category: "Red", name: "Gateway bind", status: "ok", message: "127.0.0.1 (loopback)" });
-  results.push({ category: "Red", name: "Puerto", status: "ok", message: "18790 (no expuesto externamente)" });
+  results.push({ category: "Red", name: "Puerto", status: "ok", message: "18791 (no expuesto externamente)" });
 
   const gateway = config.gateway as Record<string, unknown> | undefined;
   const token = gateway?.authToken as string | undefined;

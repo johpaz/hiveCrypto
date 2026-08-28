@@ -1,7 +1,7 @@
 export {};
 
-const GATEWAY = "http://127.0.0.1:18790";
-const WS_GATEWAY = "ws://127.0.0.1:18790/ws";
+const GATEWAY = "http://127.0.0.1:18791";
+const WS_GATEWAY = "ws://127.0.0.1:18791/ws";
 const TOKEN_PATH = "/home/johnpaez/.hivecrypto-dev/.auth_token";
 const TARGET_AGENTS = new Set(["api_operator", "browser_operator"]);
 const targetTaskIds = new Set(

@@ -1,9 +1,9 @@
 [Desktop Entry]
-Name=Hive Agents
-Comment=Local-first AI agent workspace
-Exec=hive
-Icon=io.hiveagents.desktop
+Name=hiveCrypto
+Comment=Colmena de agentes para trading cripto, local-first
+Exec=hivecrypto
+Icon=io.hivecrypto.desktop
 Terminal=false
 Type=Application
-Categories=Development;Utility;
-StartupWMClass=Hive Agents
+Categories=Development;Finance;Utility;
+StartupWMClass=hiveCrypto

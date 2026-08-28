@@ -10,7 +10,7 @@ import { getHiveDir } from "@johpaz/hivecrypto-core/config/loader";
 import { col } from "@johpaz/hivecrypto-core/storage/hive";
 import type { UserDoc } from "@johpaz/hivecrypto-core/storage/collections";
 
-const API_BASE = "http://127.0.0.1:18790/api";
+const API_BASE = "http://127.0.0.1:18791/api";
 
 /**
  * Get user's timezone from database

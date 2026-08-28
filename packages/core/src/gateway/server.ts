@@ -3,7 +3,7 @@ import { loadConfig, getHiveDir } from "../config/loader";
 import { logger, onLogEntry } from "../utils/logger";
 import { resolveUISource } from "./helpers/ui-source";
 import { sessionManager, parseSessionId } from "./session";
-import { enqueueChatTurn, initWebchatTurnRunner } from "./webchat-turn";
+import { enqueueChatTurn, initWebchatTurnRunner, resolveWebThread } from "./webchat-turn";
 import {
   type InboundMessage,
   type OutboundMessage,
@@ -107,6 +107,12 @@ import { handleDownloadArtifact } from "./routes/artifacts";
 import { handleGetActivityStats, handleGetSystemStats, handleGetUsageStats, handleSystemReload, handleApiReload, handleGetVersion, handleTriggerUpdate } from "./routes/system";
 import { handleGetChatHistory, handleGetNotes, handleUpdateNote } from "./routes/chat";
 import { handleChat as handlePostChat } from "./routes/chat";
+import {
+  handleListConversations,
+  handleCreateConversation,
+  handleRenameConversation,
+  handleDeleteConversation,
+} from "./routes/conversations";
 import { handleGetConfig } from "./routes/config";
 import { handleHttpRequest } from "./routes/http-client";
 import { handleGetWorkspace, handleUpdateWorkspace, handleValidateWorkspace, handleCreateWorkspace, handleOpenWorkspace } from "./routes/workspace";
@@ -139,7 +145,7 @@ export async function startGateway(
   embeddedUI?: ReadonlyMap<string, EmbeddedUIAsset>,
 ): Promise<void> {
   const host = config.gateway?.host ?? "127.0.0.1";
-  const port = config.gateway?.port ?? 18790;
+  const port = config.gateway?.port ?? 18791;
   const pidFile = expandPath(config.gateway?.pidFile ?? "~/.hivecrypto/gateway.pid");
 
   // FIX 2 — startTime para calcular uptime en /status y /api/agents
@@ -255,6 +261,9 @@ export async function startGateway(
           session.ws.send(JSON.stringify({
             type: "process",
             sessionId: event.session_id,
+            // Igual que los frames del turno: el navegador puede estar mirando
+            // otra conversación cuando llega esta narración.
+            threadId: event.thread_id,
             id: event.id,
             messageId: event.turn_id,
             processKind: event.kind === "tool_call" ? "tool" : "observation",
@@ -548,6 +557,10 @@ export async function startGateway(
       channel: message.channel,
       channelUserId: message.sessionId,
       accountId: message.accountId,
+      // El contacto o grupo del canal es lo que separa los hilos: cada chat de
+      // Telegram y cada grupo de WhatsApp tienen su propia conversación.
+      peerId: message.peerId,
+      peerKind: message.peerKind,
     });
 
     const telegramMeta = message.metadata?.telegram as { messageId?: number } | undefined;
@@ -557,7 +570,7 @@ export async function startGateway(
       channelManager.startTyping(message.channel, message.sessionId),
     ]);
 
-    // conversationThreadId = conversations.thread_id canónico compartido por todos los canales
+    // conversationThreadId = conversations.thread_id de ESTE canal y ESTE contacto
     const unifiedSessionId = conversationThreadId;
     // routingSessionId = peerId del canal → para enviar respuestas de vuelta al canal correcto
     const routingSessionId = message.sessionId;
@@ -870,6 +883,9 @@ export async function startGateway(
               userId,
               url.searchParams.get("voice"),
               url.searchParams.get("lang"),
+              // La voz entra en la misma conversación que el chat escrito: hablar
+              // y escribir son el mismo hilo, no dos historias paralelas.
+              url.searchParams.get("conv"),
             ),
           });
           if (success) return undefined;
@@ -1975,6 +1991,25 @@ export async function startGateway(
           return await handleDownloadArtifact(req, addCorsHeaders, artifactDownloadMatch[1]);
         }
 
+        // ── Conversations API ───────────────────────────────────────────────
+        // El id de una conversación lleva "/", así que no va en el path: query
+        // string para GET/DELETE, cuerpo para PATCH.
+        if (url.pathname === "/api/conversations" && req.method === "GET") {
+          return await handleListConversations(req, addCorsHeaders)
+        }
+
+        if (url.pathname === "/api/conversations" && req.method === "POST") {
+          return await handleCreateConversation(req, addCorsHeaders)
+        }
+
+        if (url.pathname === "/api/conversations" && req.method === "PATCH") {
+          return await handleRenameConversation(req, addCorsHeaders)
+        }
+
+        if (url.pathname === "/api/conversations" && req.method === "DELETE") {
+          return await handleDeleteConversation(req, addCorsHeaders)
+        }
+
         // ── Chat / Notes API ────────────────────────────────────────────────
         if (url.pathname === "/api/chat/history" && req.method === "GET") {
           return await handleGetChatHistory(req, addCorsHeaders)
@@ -2248,7 +2283,10 @@ export async function startGateway(
           return;
         }
 
-        msg.sessionId = msg.sessionId ?? data.sessionId;
+        // La sesión es SIEMPRE la autenticada en el upgrade, nunca la que venga en
+        // el frame: el cliente ahora elige conversación, y aceptar su sessionId
+        // dejaba escribir en el hilo y en la cola de otro.
+        msg.sessionId = data.sessionId;
         sessionManager.touch(msg.sessionId);
 
         if (msg.type === "ping") {
@@ -2326,9 +2364,17 @@ export async function startGateway(
           const sessionId = data.sessionId;
           ws.send(JSON.stringify({ type: "typing", isTyping: true, sessionId } as OutboundMessage));
 
+          const web = await resolveWebThread(sessionId, msg.threadId).catch(() => null);
+
           enqueueChatTurn({
-            lane: sessionId,
-            payload: { source: "a2ui", sessionId, content: interactionMsg },
+            lane: web?.threadId ?? sessionId,
+            payload: {
+              source: "a2ui",
+              sessionId,
+              threadId: web?.threadId,
+              userId: web?.userId,
+              content: interactionMsg,
+            },
             live: { sendRaw: (payload) => ws.send(payload) },
           }).catch((error) => {
             ws.send(JSON.stringify({ type: "typing", isTyping: false, sessionId } as OutboundMessage));
@@ -2362,8 +2408,13 @@ export async function startGateway(
 
         // Stop generation (like ChatGPT/Claude stop button)
         if (msg.type === "stop") {
-          const cancelled = (await getDurableQueue().cancelLane(msg.sessionId)) > 0;
-          log.info(`[stop] Session ${msg.sessionId} — cancelled: ${cancelled}`);
+          // La cola va por conversación, así que parar es parar ESTA conversación:
+          // cancelar por sessionId mataría el turno de otra pestaña del usuario.
+          const stopThread = await resolveWebThread(msg.sessionId, msg.threadId)
+            .then((w) => w.threadId)
+            .catch(() => msg.sessionId);
+          const cancelled = (await getDurableQueue().cancelLane(stopThread)) > 0;
+          log.info(`[stop] Conversación ${stopThread} — cancelled: ${cancelled}`);
           ws.send(JSON.stringify({
             type: "typing",
             isTyping: false,
@@ -2431,11 +2482,15 @@ export async function startGateway(
               sessionId: msg.sessionId,
             } as OutboundMessage));
 
+            const web = await resolveWebThread(msg.sessionId, msg.threadId);
+
             enqueueChatTurn({
-              lane: msg.sessionId,
+              lane: web.threadId,
               payload: {
                 source: "audio",
                 sessionId: msg.sessionId,
+                threadId: web.threadId,
+                userId: web.userId,
                 content: messageContent,
                 preferAudio: true,
               },
@@ -2471,11 +2526,25 @@ export async function startGateway(
             sessionId: msg.sessionId,
           } as OutboundMessage));
 
+          // La conversación se resuelve acá, no dentro del turno: es lo que decide
+          // la cola (una por conversación, para que dos pestañas en hilos distintos
+          // no se bloqueen entre sí) y el hilo donde se escribe.
+          let web: { userId: string; threadId: string };
+          try {
+            web = await resolveWebThread(msg.sessionId, msg.threadId);
+          } catch (error) {
+            ws.send(JSON.stringify({ type: "typing", isTyping: false, sessionId: msg.sessionId } as OutboundMessage));
+            ws.send(JSON.stringify({ type: "error", sessionId: msg.sessionId, error: (error as Error).message } as OutboundMessage));
+            return;
+          }
+
           enqueueChatTurn({
-            lane: msg.sessionId,
+            lane: web.threadId,
             payload: {
               source: "message",
               sessionId: msg.sessionId,
+              threadId: web.threadId,
+              userId: web.userId,
               content: msg.content,
               image: msg.image
                 ? { base64: msg.image.base64, mimeType: msg.image.mimeType, caption: msg.image.caption }
@@ -2579,7 +2648,7 @@ export async function startGateway(
 
   // Print URLs based on mode
   if (isDev) {
-    // In development: Gateway serves UI on port 18790 (same as production), Vite provides HMR on 5173
+    // In development: Gateway serves UI on port 18791 (same as production), Vite provides HMR on 5173
     const devUrl = gatewaySetupMode ? `http://localhost:${port}/setup` : `http://localhost:${port}`;
     log.info(`[gateway] UI:        ${devUrl}`);
     log.info(`[gateway] API:       http://${host}:${port}`);

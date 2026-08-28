@@ -1,7 +1,7 @@
 #!/bin/sh
 # Construye la imagen de Hive con los cambios actuales y opcionalmente hace push
 
-IMAGE="johpaz/hive-agents"
+IMAGE="johpaz/hivecrypto"
 TAG="latest"
 PUSH=false
 

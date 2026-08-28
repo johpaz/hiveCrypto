@@ -51,9 +51,9 @@
     "updater": {
       "active": true,
       "dialog": false,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlFRjE5OUYyM0U4OUM3RTQKUldUa3g0ays4cG54bmlSSW50Si80Vm5CNXEyTDBPTE1MR0I1OFluVUFUeVpoWURDcEV5MFRWaU8K",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ0OTg4NDQ3RTQxQjA3RkIKUldUN0J4dmtSNFNZMU9xQk56NDBNb2ZtZk8rbGVnMmJ6NVJmdlVBUmo3M1hZeHlyVmp4ZGtBOVEK",
       "endpoints": [
-        "https://github.com/johpaz/hive/releases/latest/download/latest.json"
+        "https://github.com/johpaz/hiveCrypto/releases/latest/download/latest.json"
       ]
     }
   }

@@ -68,7 +68,7 @@ async function updateFromGitRepo(): Promise<void> {
     // Aplicar actualizaciones de BD
     await applyDatabaseUpdates();
 
-    console.log("\n   Ejecuta 'hive doctor' para validar el entorno.\n");
+    console.log("\n   Ejecuta 'hivecrypto doctor' para validar el entorno.\n");
   } catch (e) {
     console.log(`\n❌ Error durante la actualización: ${(e as Error).message}`);
     console.log(`   Intenta manualmente: git pull && bun install && bun run build\n`);
@@ -82,7 +82,7 @@ async function updateFromGlobalPackage(): Promise<void> {
   // Mostrar versión actual antes de actualizar
   try {
     const { execSync } = await import("child_process");
-    const currentVersion = execSync("hive --version", { encoding: "utf-8" }).trim();
+    const currentVersion = execSync("hivecrypto --version", { encoding: "utf-8" }).trim();
     console.log(`Versión actual: ${currentVersion}`);
   } catch {
     console.log("Versión actual: desconocida");
@@ -117,15 +117,15 @@ async function updateFromGlobalPackage(): Promise<void> {
       return;
     }
 
-    console.log(`\n✅ Hive actualizado correctamente.`);
+    console.log(`\n✅ hiveCrypto actualizado correctamente.`);
 
     // ──────────────────────────────────────────────
     // Re-seed de la base de datos existente
     // ──────────────────────────────────────────────
     await applyDatabaseUpdates();
 
-    console.log(`\n   Ejecuta 'hive --version' para verificar la nueva versión.`);
-    console.log(`   Ejecuta 'hive doctor' para validar el entorno.\n`);
+    console.log(`\n   Ejecuta 'hivecrypto --version' para verificar la nueva versión.`);
+    console.log(`   Ejecuta 'hivecrypto doctor' para validar el entorno.\n`);
   } catch (e) {
     console.log(`\n⚠️  No se pudo actualizar: ${(e as Error).message}`);
     console.log(`   Intenta manualmente: bun install -g ${MAIN_PACKAGE}@latest\n`);

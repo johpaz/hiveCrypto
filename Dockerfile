@@ -11,10 +11,10 @@ COPY packages/hive-ui ./packages/hive-ui
 
 # Stub workspace packages with correct names so bun workspace resolution works
 RUN mkdir -p packages/core packages/cli packages/mcp packages/skills && \
-      echo '{"name":"@johpaz/hive-agents-core","version":"0.0.0"}' > packages/core/package.json && \
-      echo '{"name":"@johpaz/hive-agents","version":"0.0.0"}' > packages/cli/package.json && \
-      echo '{"name":"@johpaz/hive-agents-mcp","version":"0.0.0"}' > packages/mcp/package.json && \
-      echo '{"name":"@johpaz/hive-agents-skills","version":"0.0.0"}' > packages/skills/package.json
+      echo '{"name":"@johpaz/hivecrypto-core","version":"0.0.0"}' > packages/core/package.json && \
+      echo '{"name":"@johpaz/hivecrypto-cli","version":"0.0.0"}' > packages/cli/package.json && \
+      echo '{"name":"@johpaz/hivecrypto-mcp","version":"0.0.0"}' > packages/mcp/package.json && \
+      echo '{"name":"@johpaz/hivecrypto-skills","version":"0.0.0"}' > packages/skills/package.json
 
 RUN bun install
 RUN cd packages/hive-ui && bun run build
@@ -84,13 +84,13 @@ COPY --from=binary-builder /app/packages/skills/src/bundled ./packages/skills/sr
 # Copy built UI
 COPY --from=ui-builder /app/packages/hive-ui/dist ./ui
 
-# Hive data directory — mount a volume here for persistence
-VOLUME /root/.hive
+# Directorio de datos de hiveCrypto — mount a volume here for persistence
+VOLUME /root/.hivecrypto
 
-EXPOSE 18790
+EXPOSE 18791
 
 ENV HIVE_HOST=0.0.0.0
-ENV HIVE_PORT=18790
+ENV HIVE_PORT=18791
 ENV HIVE_UI_DIR=/app/ui
 ENV NODE_ENV=production
 

@@ -198,7 +198,7 @@ async function main(): Promise<void> {
     case "--version":
     case "-v":
     case "version":
-      console.log(`Hive v${VERSION}`);
+      console.log(`hiveCrypto v${VERSION}`);
       process.exit(0);
       break;
     case "--help":
