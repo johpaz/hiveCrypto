@@ -30,6 +30,7 @@ COPY package.json bun.lock bunfig.toml tsconfig.base.json tsconfig.json ./
 COPY packages/core/package.json ./packages/core/package.json
 COPY packages/cli/package.json ./packages/cli/package.json
 COPY packages/mcp/package.json ./packages/mcp/package.json
+COPY packages/mcp-trading/package.json ./packages/mcp-trading/package.json
 COPY packages/skills/package.json ./packages/skills/package.json
 RUN bun install --ignore-scripts
 
@@ -37,6 +38,10 @@ RUN bun install --ignore-scripts
 COPY packages/core ./packages/core
 COPY packages/cli ./packages/cli
 COPY packages/mcp ./packages/mcp
+# packages/core importa @johpaz/hivecrypto-mcp-trading desde el fuente (las
+# herramientas de trading y /api/trading). Sin esto, bun lo busca en el registro
+# y falla con 404: es un paquete privado del workspace, no publicado.
+COPY packages/mcp-trading ./packages/mcp-trading
 COPY packages/skills ./packages/skills
 COPY scripts/build-gateway.ts ./scripts/build-gateway.ts
 
